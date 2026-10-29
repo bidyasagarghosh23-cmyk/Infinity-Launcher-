@@ -48,8 +48,9 @@ JVM situation documented rather than hand-waved.
 ## Native downloads
 
 Windows `.exe` and Android `.apk` preview packages are built by GitHub Actions.
-See [Releases](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases)
-for downloads and [docs/PACKAGING.md](docs/PACKAGING.md) for compatibility,
+See [DOWNLOADS.md](DOWNLOADS.md) for the current package links,
+[Releases](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases)
+for all builds, and [docs/PACKAGING.md](docs/PACKAGING.md) for compatibility,
 signing and installation details. The Android APK manages instances/downloads;
 it does **not** include a JVM for playing Java Edition on Android.
 

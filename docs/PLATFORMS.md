@@ -29,21 +29,22 @@ npm run tauri android dev
 npm run tauri android build -- --apk --aab
 ```
 
-**The honest part:** Android ships no JVM, and Minecraft: Java Edition cannot
-run on ART. Running Java Edition on Android is only possible by bundling a
-Java runtime compiled for the device (this is the approach projects like
-PojavLauncher take: a Pojav-style JRE, Pango/Cairo shims and an OpenGL surface
-with GL4ES/ANGLE/VirGL translation).
+**The honest part:** Android ships no desktop JVM, and Minecraft: Java Edition
+cannot run on ART alone. Running Java Edition on Android requires a bundled
+mobile Java runtime and native rendering bridge. Infinity has selected
+[Amethyst](https://github.com/AngelAuraMC/Amethyst-Android) (the maintained
+PojavLauncher successor) as the engine target; see
+[ENGINE_COMPARISON.md](ENGINE_COMPARISON.md) for the Amethyst vs
+ZalithLauncher2/MJLauncher comparison. No engine runtime is bundled or
+device-tested yet.
 
 Infinity Launcher is structured so that is a *plumbing* change, not a rewrite:
 
-1. `java::provision` already installs runtimes into `runtime/`; add an Android
-   branch that unpacks a Pojav-style JRE bundle into the app's native library
-   directory (Android will not execute binaries from ordinary storage).
-2. `launch::spawn` builds a normal JVM command line; on Android it must instead
-   be marshalled through a JNI entry point in a small native shim.
-3. `java::detect` should also probe `$PREFIX/bin/java` for Termux users, which
-   already works today via `PATH` on rooted/dev setups.
+1. Package Amethyst's JRE/LWJGL/renderer components for Android ABIs with the
+   required LGPL notices and source offer.
+2. Add an Infinity → Amethyst launch bridge instead of spawning a desktop JVM.
+3. Keep Android Play disabled until a physical-device vanilla launch/world test
+   passes, then update `engine_status` and remove the guard.
 
 Until that lands, the Android build is a fully working launcher UI + download
 and instance manager, and it reports the missing runtime with a clear message

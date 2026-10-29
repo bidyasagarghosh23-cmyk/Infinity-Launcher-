@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Infinity Launcher",
+  "mainBinaryName": "infinity-launcher",
+  "version": "1.0.0",
+  "identifier": "app.infinitylauncher",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Infinity Launcher",
+        "width": 1240,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "resizable": true,
+        "theme": "Dark",
+        "backgroundColor": "#08070F",
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob: https://textures.minecraft.net https://mc-heads.net https://assets.mojang.com https://*.mojang.com https://*.minecraftservices.com https://*.minecraft.net; connect-src 'self' ipc: http://ipc.localhost https://piston-meta.mojang.com https://*.mojang.com https://resources.download.minecraft.net https://libraries.minecraft.net https://login.microsoftonline.com https://*.live.com https://*.githubusercontent.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; worker-src 'self' blob:; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'",
+      "devCsp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob: https:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1421 http://localhost:1420 https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; worker-src 'self' blob:",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["$APPDATA/**", "$APPCONFIG/**", "$APPLOCALDATA/**", "$HOME/.infinity/**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "Infinity Launcher",
+    "category": "Game",
+    "shortDescription": "A custom Minecraft: Java Edition launcher",
+    "longDescription": "Infinity Launcher is a fast, modern, cross-platform launcher for Minecraft: Java Edition. Manage instances, mod loader profiles, accounts, skins and Java runtimes from one client on Windows, macOS, Linux, Android and iOS.",
+    "copyright": "© 2026 Infinity Launcher contributors. Not affiliated with Mojang Studios or Microsoft.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["resources/**/*"],
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "entitlements": "entitlements.plist",
+      "exceptionDomain": ""
+    },
+    "iOS": {
+      "minimumSystemVersion": "14.0"
+    },
+    "android": {
+      "minSdkVersion": 26
+    }
+  },
+  "plugins": {}
+}

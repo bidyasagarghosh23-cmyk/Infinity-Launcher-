@@ -1,0 +1,17 @@
+{
+  "name": "Infinity Launcher",
+  "short_name": "Infinity",
+  "description": "A fast, modern Minecraft: Java Edition launcher.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#08070F",
+  "theme_color": "#08070F",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

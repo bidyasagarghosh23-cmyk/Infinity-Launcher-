@@ -174,7 +174,7 @@ pub async fn install(state: &AppState, args: &InstallContentArgs) -> Result<Cont
     let manifest_key = if args.kind == ContentKind::World {
         Path::new(&file_name).file_stem().and_then(|v| v.to_str()).unwrap_or("world").to_string()
     } else { file_name.clone() };
-    manifest.items.insert(manifest_key, ContentRecord {
+    manifest.items.insert(manifest_key.clone(), ContentRecord {
         name: args.project.title.clone(),
         source: args.project.source,
         project_id: args.project.id.clone(),
@@ -195,7 +195,7 @@ pub fn extract_zip(archive: &Path, dest: &Path) -> Result<()> {
     let mut total = 0u64;
     let mut paths = Vec::new();
     for index in 0..zip.len() {
-        let entry = zip.by_index(index)?;
+        let entry = zip.by_index(index).map_err(|err| Error::Message(format!("bad zip entry: {err}")))?;
         let name = entry.name().to_string();
         let path = Path::new(&name);
         if path.components().any(|c| !matches!(c, Component::Normal(_))) {
@@ -210,7 +210,7 @@ pub fn extract_zip(archive: &Path, dest: &Path) -> Result<()> {
         let out = dest.join(&name);
         if is_dir { std::fs::create_dir_all(&out)?; continue; }
         if let Some(parent) = out.parent() { std::fs::create_dir_all(parent)?; }
-        let mut entry = zip.by_name(&name)?;
+        let mut entry = zip.by_name(&name).map_err(|err| Error::Message(format!("bad zip entry {name}: {err}")))?;
         let mut file = std::fs::File::create(&out)?;
         std::io::copy(&mut entry, &mut file)?;
     }

@@ -113,6 +113,23 @@ jobs:
         run: |
           set -euo pipefail
           npm run tauri android init -- --ci --skip-targets-install 2>&1 | tee android-init.log
+      - name: Keep the sideload APK small
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          changed = 0
+          for path in Path('src-tauri/gen/android').rglob('app/build.gradle.kts'):
+              text = path.read_text()
+              updated = re.sub(r'^\s*jniLibs\.keepDebugSymbols\.add\([^\n]*\)\s*$', '', text, flags=re.MULTILINE)
+              if updated != text:
+                  path.write_text(updated)
+                  changed += 1
+          if changed == 0:
+              raise SystemExit('No debug-symbol keep rules found; inspect the generated Gradle project')
+          print(f'Removed debug-symbol keep rules from {changed} Gradle file(s)')
+          PY
       - name: Build ARM64 and x86_64 APK
         run: |
           set -euo pipefail
@@ -190,24 +207,30 @@ jobs:
 
           ## Verification
 
-          Compare downloads against `SHA25SUMS.txt`. These packages were compiled from the commit shown in the release metadata. Build success and APK signature verification do not replace testing on real devices.
+          Compare downloads against `SHA256SUMS.txt`. These packages were compiled from the commit shown in the release metadata. Build success and APK signature verification do not replace testing on real devices.
 
           This is an unofficial launcher, not affiliated with Mojang Studios or Microsoft. You must own Minecraft: Java Edition to play online.
           EOF
-          sed -i 's/SHA25SUMS.txt/SHA256SUMS.txt/' packages/INSTALL.md
       - name: Publish a GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: v1.0.0-preview.${{ github.run_id }}.${{ github.run_attempt }}
+          TAG: v1.0.0-preview.${{ github.run_id }}
         shell: bash
         run: |
-          gh release create "$TAG" \
-            --target "$GITHUB_SHA" \
-            --prerelease \
-            --title "Infinity Launcher 1.0.0 — Android & Windows preview" \
-            --notes-file packages/INSTALL.md \
+          set -euo pipefail
+          title="Infinity Launcher 1.0.0 — Android & Windows preview"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$title" --notes-file packages/INSTALL.md --prerelease 2>&1 | tee release.log
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "$title" --notes-file packages/INSTALL.md 2>&1 | tee release.log
+          fi
+          gh release upload "$TAG" \
             packages/Infinity-Launcher-1.0.0-android-preview.apk \
             packages/Infinity-Launcher-1.0.0-windows-x64.exe \
             packages/Infinity-Launcher-1.0.0-windows-x64-setup.exe \
-            packages/SHA25SUMS.txt \
-            packages/INSTALL.md
+            packages/SHA256SUMS.txt \
+            packages/INSTALL.md \
+            --clobber 2>&1 | tee -a release.log
+      - name: Report a publishing failure
+        if: failure()
+        run: node scripts/report-ci-log.mjs release.log

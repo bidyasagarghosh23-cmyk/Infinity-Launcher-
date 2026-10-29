@@ -355,12 +355,13 @@ pub fn offline_account(username: &str) -> Account {
         username.trim().to_string()
     };
     let uuid = offline_uuid(&name);
+    let avatar_url = format!("https://mc-heads.net/avatar/{uuid}/128");
     Account {
         id: uuid.clone(),
         username: name,
         uuid,
         kind: AccountKind::Offline,
-        avatar_url: Some(format!("https://mc-heads.net/avatar/{uuid}/128")),
+        avatar_url: Some(avatar_url),
         skin_url: None,
         cape_url: None,
         skin_variant: None,

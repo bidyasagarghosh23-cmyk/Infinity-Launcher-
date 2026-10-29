@@ -47,12 +47,11 @@ fn features_for(settings: &Settings) -> Features {
 #[tauri::command]
 pub async fn system_info(state: State<'_, AppState>) -> Result<SystemInfo> {
     let paths = state.paths();
-    let mut total_memory_mb = 0u64;
-    {
+    let total_memory_mb = {
         let mut system = sysinfo::System::new();
         system.refresh_memory();
-        total_memory_mb = system.total_memory() / 1024 / 1024;
-    }
+        system.total_memory() / 1024 / 1024
+    };
     let running: Vec<GameStatus> = state
         .running
         .lock()

@@ -7,7 +7,7 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
-use crate::error::{Context, Error, Result};
+use crate::error::{Error, Result};
 use crate::install;
 use crate::model::{Account, AccountKind, Instance, Settings};
 use crate::mojang::ResolvedVersion;

@@ -12,7 +12,7 @@ use crate::error::{Context, Error, Result};
 use crate::model::{Loader, LoaderVersion, Progress};
 use crate::mojang::{self, ResolvedVersion};
 use crate::paths::Paths;
-use crate::rules::{self, Features};
+use crate::rules::Features;
 
 /// Anything that wants to receive install progress (the Tauri event bridge,
 /// or a no-op in tests).

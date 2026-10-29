@@ -1,6 +1,6 @@
-/**Expose the useful part of failed CI commands as GitHub job annotations.
- * GitHub truncates annotation messages, so keep this well under 4 KiB and
- * prefer explicit error blocks over an arbitrary byte slice of a long log.
+/**Expose failed CI command details as GitHub job annotations.
+ * GitHub truncates individual annotation messages, so emit small numbered
+ * parts and prefer explicit error blocks over an arbitrary slice of a log.
  */
 import fs from 'node:fs';
 
@@ -21,6 +21,11 @@ for (const file of process.argv.slice(2)) {
   });
   const blocks = [...selected].sort((a, b) => a - b).map((index) => lines[index]).join('\n');
   const tail = lines.slice(-35).join('\n');
-  const message = `${blocks}\n--- log tail ---\n${tail}`.slice(-3600);
-  console.log(`::error title=${file}::${escape(message)}`);
+  const message = `${blocks.slice(0, 12000)}\n--- log tail ---\n${tail.slice(-2000)}`;
+  const parts = [];
+  for (let i = 0; i < message.length; i += 3500) parts.push(message.slice(i, i + 3500));
+  parts.forEach((part, index) => {
+    const title = parts.length > 1 ? `${file} (${index + 1}/${parts.length})` : file;
+    console.log(`::error title=${title}::${escape(part)}`);
+  });
 }

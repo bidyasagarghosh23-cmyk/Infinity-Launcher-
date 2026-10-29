@@ -17,11 +17,11 @@ pub fn read_json<T: DeserializeOwned>(path: &Path, fallback: T) -> T {
 pub fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)
-            .with_context(format!("creating {}", parent.display()))?;
+            .context(format!("creating {}", parent.display()))?;
     }
     let data = serde_json::to_vec_pretty(value)?;
     let tmp = path.with_extension("json.tmp");
-    std::fs::write(&tmp, &data).with_context(format!("writing {}", tmp.display()))?;
-    std::fs::rename(&tmp, path).with_context(format!("replacing {}", path.display()))?;
+    std::fs::write(&tmp, &data).context(format!("writing {}", tmp.display()))?;
+    std::fs::rename(&tmp, path).context(format!("replacing {}", path.display()))?;
     Ok(())
 }

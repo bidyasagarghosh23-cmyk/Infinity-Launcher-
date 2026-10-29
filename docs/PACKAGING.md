@@ -92,8 +92,8 @@ npm run tauri android build -- --ci --apk --debug --target aarch64 x86_64
 ```
 
 The generated project lives under `src-tauri/gen/android/` and is intentionally
-ignored by Git. The APK is under
-`src-tauri/gen/android/app/build/outputs/apk/universal/debug/`.
+ignored by Git. The APK is under that tree in an `app/build/outputs/apk/…/debug/`
+directory; CI searches recursively for the universal debug APK.
 
 For a production Android release, use your own signing configuration and a
 release build instead of copying the CI debug-signing approach. Keep keystores

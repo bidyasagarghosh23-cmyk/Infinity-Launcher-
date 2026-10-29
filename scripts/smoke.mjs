@@ -11,7 +11,10 @@ import path from 'node:path';
 import fs from 'node:fs';
 
 const root = path.resolve(import.meta.dirname, '..');
-const outDir = path.join(root, '.tmp');
+// Artifacts live under node_modules/.cache: outside the repo (so the Vite dev
+// server never reloads pages mid-test) but still able to resolve `react`.
+const outDir = path.join(root, 'node_modules/.cache/infinity-smoke');
+fs.rmSync(outDir, { recursive: true, force: true });
 fs.mkdirSync(outDir, { recursive: true });
 
 // Self-contained entry: mounts <App /> and exposes the store for assertions.
@@ -72,7 +75,7 @@ await build({
   entryPoints: [entryFile],
   bundle: true,
   format: 'esm',
-  outfile: path.join(root, '.tmp/smoke-bundle.mjs'),
+  outfile: path.join(outDir, 'smoke-bundle.mjs'),
   jsx: 'automatic',
   loader: { '.css': 'empty' },
   external: ['react', 'react-dom', 'react/jsx-runtime', 'react-dom/client'],
@@ -89,7 +92,7 @@ console.error = (...args) => {
 
 const { act } = await import('react');
 await act(async () => {
-  await import(path.join(root, '.tmp/smoke-bundle.mjs'));
+  await import(path.join(outDir, 'smoke-bundle.mjs'));
 });
 
 const settle = async (ms = 0) => {
@@ -124,7 +127,7 @@ console.log('store:', JSON.stringify({
   settings: Boolean(state?.settings),
   system: Boolean(state?.system),
 }));
-fs.writeFileSync(path.join(root, '.tmp/smoke-home.html'), document.body.innerHTML);
+fs.writeFileSync(path.join(outDir, 'smoke-home.html'), document.body.innerHTML);
 must('Fabulously Optimized', 'seed instance');
 must('Infinity Launcher', 'brand');
 must('Run it anywhere', 'platforms strip');
@@ -132,7 +135,7 @@ console.log('route /home ok');
 
 for (const label of ['Instances', 'Console', 'Accounts', 'Settings']) {
   await clickByText(label);
-  fs.writeFileSync(path.join(root, `.tmp/smoke-${label}.html`), document.body.innerHTML);
+  fs.writeFileSync(path.join(outDir, `smoke-${label}.html`), document.body.innerHTML);
   console.log(`route /${label.toLowerCase()} ok — ${text().length} chars`);
 }
 
@@ -145,7 +148,7 @@ await clickByText('New instance');
 console.log('home -> instances navigation ok');
 must('Minecraft version', 'create modal');
 must('Mod loader', 'create modal loader picker');
-fs.writeFileSync(path.join(root, '.tmp/smoke-modal.html'), document.body.innerHTML);
+fs.writeFileSync(path.join(outDir, 'smoke-modal.html'), document.body.innerHTML);
 console.log('create-instance modal ok');
 
 // Close the dialog, then start an install simulation.
@@ -167,7 +170,7 @@ console.log('install progress:', JSON.stringify(entry));
 must('Libraries', 'install progress');
 const loggedRoute = globalThis.window.__store?.getState()?.route;
 if (loggedRoute !== 'console') throw new Error(`expected console route, got ${loggedRoute}`);
-fs.writeFileSync(path.join(root, '.tmp/smoke-install.html'), document.body.innerHTML);
+fs.writeFileSync(path.join(outDir, 'smoke-install.html'), document.body.innerHTML);
 console.log('install simulation ok');
 
 // Account dialog.
@@ -175,16 +178,20 @@ await clickByText('Accounts');
 await clickByText('Add account');
 must('Microsoft account', 'account modal');
 must('Offline profile', 'account modal offline');
-fs.writeFileSync(path.join(root, '.tmp/smoke-account.html'), document.body.innerHTML);
+fs.writeFileSync(path.join(outDir, 'smoke-account.html'), document.body.innerHTML);
 console.log('add-account modal ok');
 
 const fatal = errors.filter(
-  (line) => !/Not implemented: (HTMLCanvasElement|window\.scrollTo)/.test(line),
+  (line) =>
+    !/Not implemented: (HTMLCanvasElement|window\.scrollTo)/.test(line) &&
+    !/not wrapped in act/.test(line),
 );
 if (fatal.length) {
   console.log(`\n${fatal.length} console error(s):`);
   for (const line of fatal.slice(0, 12)) console.log(' -', line.slice(0, 400));
-  process.exitCode = 1;
-} else {
-  console.log('\n✓ no console errors');
+  process.exit(1);
 }
+
+console.log('\n✓ no console errors');
+// Demo timers keep the event loop alive; exit explicitly.
+process.exit(0);

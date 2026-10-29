@@ -8,6 +8,7 @@ on:
       - 'src/**'
       - 'src-tauri/**'
       - 'public/**'
+      - 'scripts/**'
       - 'package*.json'
       - 'index.html'
       - 'vite.config.ts'
@@ -46,7 +47,10 @@ jobs:
           workspaces: src-tauri
       - run: npm ci --no-audit --no-fund
       - name: Test the UI
-        run: npm test
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test 2>&1 | tee ui-test.log
       - name: Build native Windows release
         shell: bash
         run: |
@@ -70,9 +74,7 @@ jobs:
         if: failure()
         shell: bash
         run: |
-          if [[ -f windows-build.log ]]; then
-            node -e 'const fs=require("fs"); const text=fs.readFileSync("windows-build.log","utf8").replace(/\u001b\[[0-9;]*m/g,""); const tail=text.slice(-14000).replace(/%/g,"%25").replace(/\r/g,"%0D").replace(/\n/g,"%0A"); console.log("::error title=Windows build log::"+tail);'
-          fi
+          node scripts/report-ci-log.mjs ui-test.log windows-build.log
       - uses: actions/upload-artifact@v7
         with:
           name: windows-x64
@@ -108,7 +110,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: npm ci --no-audit --no-fund
       - name: Generate the Tauri Android project
-        run: npm run tauri android init -- --ci --skip-targets-install
+        run: |
+          set -euo pipefail
+          npm run tauri android init -- --ci --skip-targets-install 2>&1 | tee android-init.log
       - name: Build ARM64 and x86_64 APK
         run: |
           set -euo pipefail
@@ -128,9 +132,7 @@ jobs:
       - name: Report a build failure in the job annotations
         if: failure()
         run: |
-          if [[ -f android-build.log ]]; then
-            node -e 'const fs=require("fs"); const text=fs.readFileSync("android-build.log","utf8").replace(/\u001b\[[0-9;]*m/g,""); const tail=text.slice(-14000).replace(/%/g,"%25").replace(/\r/g,"%0D").replace(/\n/g,"%0A"); console.log("::error title=Android build log::"+tail);'
-          fi
+          node scripts/report-ci-log.mjs android-init.log android-build.log
       - uses: actions/upload-artifact@v7
         with:
           name: android-apk

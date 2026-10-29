@@ -45,6 +45,14 @@ Desktop is the honest, complete target today. Mobile is wired end-to-end (the
 same Rust commands, the same UI, mobile layouts, safe-area handling) with the
 JVM situation documented rather than hand-waved.
 
+## Native downloads
+
+Windows `.exe` and Android `.apk` preview packages are built by GitHub Actions.
+See [Releases](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases)
+for downloads and [docs/PACKAGING.md](docs/PACKAGING.md) for compatibility,
+signing and installation details. The Android APK manages instances/downloads;
+it does **not** include a JVM for playing Java Edition on Android.
+
 ## Quick start
 
 ```bash

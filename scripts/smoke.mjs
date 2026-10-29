@@ -9,6 +9,7 @@ import { JSDOM } from 'jsdom';
 import { build } from 'esbuild';
 import path from 'node:path';
 import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 const root = path.resolve(import.meta.dirname, '..');
 // Artifacts live under node_modules/.cache: outside the repo (so the Vite dev
@@ -19,12 +20,14 @@ fs.mkdirSync(outDir, { recursive: true });
 
 // Self-contained entry: mounts <App /> and exposes the store for assertions.
 const entryFile = path.join(outDir, 'smoke-entry.tsx');
+const appImport = './' + path.relative(outDir, path.join(root, 'src/App')).replaceAll('\\', '/');
+const storeImport = './' + path.relative(outDir, path.join(root, 'src/store/launcher')).replaceAll('\\', '/');
 fs.writeFileSync(
   entryFile,
   `import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from '${path.join(root, 'src/App').replaceAll('\\', '/')}';
-import { useLauncher } from '${path.join(root, 'src/store/launcher').replaceAll('\\', '/')}';
+import App from '${appImport}';
+import { useLauncher } from '${storeImport}';
 
 (window as unknown as { __store?: typeof useLauncher }).__store = useLauncher;
 
@@ -92,7 +95,7 @@ console.error = (...args) => {
 
 const { act } = await import('react');
 await act(async () => {
-  await import(path.join(outDir, 'smoke-bundle.mjs'));
+  await import(pathToFileURL(path.join(outDir, 'smoke-bundle.mjs')).href);
 });
 
 const settle = async (ms = 0) => {

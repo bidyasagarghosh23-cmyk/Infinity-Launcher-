@@ -364,8 +364,13 @@ pub fn native_classifier(lib: &Library) -> Option<String> {
     if classifier.is_empty() {
         return None;
     }
-    // Legacy naming used `natives-windows-32/64`; newer always ships 64-bit.
-    if !classifier.contains("64") && !classifier.contains("32") && rules::is_64_bit() {
+    // Legacy Windows naming used `natives-windows-32/64`. Do not append an
+    // architecture suffix to Linux/macOS classifiers such as `natives-linux`.
+    if rules::os_name() == "windows"
+        && !classifier.contains("64")
+        && !classifier.contains("32")
+        && rules::is_64_bit()
+    {
         classifier = format!("{classifier}-64");
     }
     Some(classifier)

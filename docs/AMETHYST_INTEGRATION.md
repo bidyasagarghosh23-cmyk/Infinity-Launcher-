@@ -1,6 +1,6 @@
 # Amethyst Android engine integration
 
-Status: **pinned, not integrated**. The current APK is still a management/content
+Status: **pinned, not integrated**. See also [ENGINE_COMPARISON.md](ENGINE_COMPARISON.md). The current APK is still a management/content
 preview. Android Play is intentionally disabled.
 
 ## Selected upstream

@@ -51,8 +51,11 @@ Windows `.exe` and Android `.apk` preview packages are built by GitHub Actions.
 See [DOWNLOADS.md](DOWNLOADS.md) for the current package links,
 [Releases](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases)
 for all builds, and [docs/PACKAGING.md](docs/PACKAGING.md) for compatibility,
-signing and installation details. The Android APK manages instances/downloads;
-it does **not** include a JVM for playing Java Edition on Android.
+signing and installation details. The Android APK is a client hub/content
+manager; it does **not** yet include a tested Android JVM/rendering bridge for
+playing Java Edition on Android. See
+[docs/ENGINE_COMPARISON.md](docs/ENGINE_COMPARISON.md) for the Amethyst vs
+ZalithLauncher2/MJLauncher engine comparison.
 
 ## Quick start
 

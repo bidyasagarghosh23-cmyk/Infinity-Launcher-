@@ -269,6 +269,10 @@ mod tests {
     }
 }
 
+fn loader_str(loader: &crate::model::Loader) -> &'static str {
+    match loader { crate::model::Loader::Vanilla => "vanilla", crate::model::Loader::Fabric => "fabric", crate::model::Loader::Quilt => "quilt", crate::model::Loader::Forge => "forge", crate::model::Loader::NeoForge => "neoforge" }
+}
+
 pub async fn check_updates(state: &AppState, instance_id: &str, kind: ContentKind) -> Result<Vec<ContentUpdate>> {
     let items = list(state, instance_id, kind)?;
     let instance = state.instances_snapshot().into_iter().find(|i| i.id == instance_id)
@@ -276,7 +280,7 @@ pub async fn check_updates(state: &AppState, instance_id: &str, kind: ContentKin
     let mut updates = Vec::new();
     for item in items {
         let (Some(source), Some(project_id)) = (item.source, item.project_id.clone()) else { continue };
-        let Ok(files) = crate::catalog::files(&state.http, source, &project_id, kind, Some(&instance.mc_version), Some(&instance.loader)).await else { continue };
+        let Ok(files) = crate::catalog::files(&state.http, source, &project_id, kind, Some(&instance.mc_version), Some(loader_str(&instance.loader))).await else { continue };
         if let Some(latest) = files.into_iter().next() {
             if item.version_id.as_deref() != Some(latest.id.as_str()) {
                 updates.push(ContentUpdate { item, latest });

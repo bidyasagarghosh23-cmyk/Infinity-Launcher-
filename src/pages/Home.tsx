@@ -272,6 +272,20 @@ export function Home() {
         </div>
       </Card>
 
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { route: 'discover' as const, label: 'Discover', desc: 'Mods, packs, shaders, worlds', icon: Download },
+          { route: 'content' as const, label: 'Content', desc: 'Toggle mods and packs per instance', icon: Boxes },
+          { route: 'appearance' as const, label: 'Appearance', desc: 'Local skins, capes and cosmetics', icon: Sparkles },
+          { route: 'engine' as const, label: 'Engine', desc: 'Amethyst status and performance', icon: Cpu },
+        ].map((item) => (
+          <button key={item.route} onClick={() => setRoute(item.route)} className="panel card-hover flex items-center gap-3 p-4 text-left">
+            <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-brand-soft"><item.icon className="h-5 w-5 text-violet-200" /></div>
+            <div><div className="text-[13.5px] font-semibold text-white">{item.label}</div><div className="text-[11.5px] text-white/40">{item.desc}</div></div>
+          </button>
+        ))}
+      </div>
+
       <div className="grid gap-5 xl:grid-cols-[1.6fr_1fr]">
         {/* Library -------------------------------------------------------- */}
         <div>

@@ -246,3 +246,28 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Client themes: Lunar-inspired blue/cyan without copying Lunar assets */
+/* ------------------------------------------------------------------ */
+:root[data-theme='lunar'] body {
+  background: #060b16;
+}
+:root[data-theme='lunar'] .btn-primary,
+:root[data-theme='lunar'] .bg-brand {
+  background-image: linear-gradient(120deg, #2563eb 0%, #38bdf8 60%, #22d3ee 100%);
+}
+:root[data-theme='lunar'] .text-brand {
+  background-image: linear-gradient(110deg, #60a5fa, #38bdf8 45%, #22d3ee);
+}
+:root[data-theme='lunar'] .shadow-glow-sm {
+  box-shadow: 0 0 24px -10px rgba(56, 189, 248, 0.65);
+}
+:root[data-theme='midnight'] body { background: #050505; }
+:root[data-theme='midnight'] .btn-primary,
+:root[data-theme='midnight'] .bg-brand {
+  background-image: linear-gradient(120deg, #334155, #64748b);
+}
+:root[data-theme='midnight'] .text-brand {
+  background-image: linear-gradient(110deg, #e2e8f0, #94a3b8);
+}

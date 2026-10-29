@@ -79,6 +79,20 @@ export function Settings() {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 pb-6">
+      {/* Theme ----------------------------------------------------------- */}
+      <section>
+        <SectionHeading title="Client theme" subtitle="Lunar-inspired dark client styling; original Infinity branding and assets." />
+        <Card className="p-5">
+          <Field label="Theme">
+            <Select value={draft.theme} onChange={(event) => { setDraft({ ...draft, theme: event.target.value }); void patchSettings({ theme: event.target.value }); }}>
+              <option value="lunar">Lunar-inspired (blue/cyan)</option>
+              <option value="infinity">Infinity (violet/cyan)</option>
+              <option value="midnight">Midnight (monochrome)</option>
+            </Select>
+          </Field>
+        </Card>
+      </section>
+
       {/* Memory ---------------------------------------------------------- */}
       <section>
         <SectionHeading

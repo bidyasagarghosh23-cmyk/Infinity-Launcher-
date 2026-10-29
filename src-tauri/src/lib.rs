@@ -1,7 +1,11 @@
 //! Infinity Launcher — application entry point and Tauri wiring.
 
+pub mod appearance;
 pub mod auth;
+pub mod catalog;
+pub mod content;
 pub mod commands;
+pub mod engine;
 pub mod error;
 pub mod install;
 pub mod java;
@@ -9,6 +13,7 @@ pub mod launch;
 pub mod model;
 pub mod mojang;
 pub mod paths;
+pub mod performance;
 pub mod rules;
 pub mod state;
 pub mod store;
@@ -61,7 +66,21 @@ pub fn run() {
             commands::read_log,
             commands::console_lines,
             commands::clear_log,
-            commands::open_data_dir
+            commands::open_data_dir,
+            commands::catalog_status,
+            commands::catalog_search,
+            commands::catalog_files,
+            commands::list_content,
+            commands::install_content,
+            commands::toggle_content,
+            commands::remove_content,
+            commands::list_worlds,
+            commands::list_appearance,
+            commands::save_appearance,
+            commands::remove_appearance,
+            commands::performance_presets,
+            commands::apply_performance,
+            commands::engine_status
         ])
         .setup(|app| {
             // Android and iOS must write inside their own app sandbox, not a

@@ -1,4 +1,4 @@
-import { Boxes, Home, Settings2, Terminal, Users } from 'lucide-react';
+import { Boxes, Compass, Home, Palette, Settings2 } from 'lucide-react';
 import { useLauncher } from '../../store/launcher';
 import type { Route } from '../../store/launcher';
 import { cn } from '../../lib/util';
@@ -6,8 +6,9 @@ import { cn } from '../../lib/util';
 const ITEMS: Array<{ id: Route; label: string; icon: typeof Home }> = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'instances', label: 'Library', icon: Boxes },
-  { id: 'console', label: 'Console', icon: Terminal },
-  { id: 'accounts', label: 'Accounts', icon: Users },
+  { id: 'discover', label: 'Discover', icon: Compass },
+  { id: 'content', label: 'Content', icon: Boxes },
+  { id: 'appearance', label: 'Looks', icon: Palette },
   { id: 'settings', label: 'Settings', icon: Settings2 },
 ];
 

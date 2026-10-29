@@ -114,7 +114,19 @@ pub struct Settings {
     pub language: String,
     pub selected_instance: Option<String>,
     pub theme: String,
+    #[serde(default = "default_performance_profile")]
+    pub performance_profile: String,
+    #[serde(default = "default_android_renderer")]
+    pub android_renderer: String,
+    #[serde(default = "default_touch_controls")]
+    pub touch_controls: bool,
+    #[serde(default)]
+    pub reduce_effects: bool,
 }
+
+fn default_performance_profile() -> String { "balanced".into() }
+fn default_android_renderer() -> String { "gl4es".into() }
+fn default_touch_controls() -> bool { true }
 
 impl Default for Settings {
     fn default() -> Self {
@@ -134,7 +146,11 @@ impl Default for Settings {
             show_snapshots: false,
             language: "en".to_string(),
             selected_instance: None,
-            theme: "infinity".to_string(),
+            theme: "lunar".to_string(),
+            performance_profile: "balanced".to_string(),
+            android_renderer: "gl4es".to_string(),
+            touch_controls: true,
+            reduce_effects: false,
         }
     }
 }
@@ -252,4 +268,187 @@ pub struct LoaderVersion {
     pub stable: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mc_version: Option<String>,
+}
+
+// ---------------------------------------------------------------------------
+// Client hub: catalogs, per-instance content, appearance and engine status
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ContentKind {
+    Mod,
+    Resourcepack,
+    Shader,
+    World,
+    Datapack,
+    Modpack,
+}
+
+impl ContentKind {
+    pub fn folder(self) -> &'static str {
+        match self {
+            Self::Mod => "mods",
+            Self::Resourcepack => "resourcepacks",
+            Self::Shader => "shaderpacks",
+            Self::World => "saves",
+            Self::Datapack => "datapacks",
+            Self::Modpack => "modpacks",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum CatalogSource {
+    Modrinth,
+    Curseforge,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogQuery {
+    pub source: CatalogSource,
+    pub kind: ContentKind,
+    #[serde(default)]
+    pub query: String,
+    #[serde(default)]
+    pub mc_version: Option<String>,
+    #[serde(default)]
+    pub loader: Option<String>,
+    #[serde(default)]
+    pub offset: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogProject {
+    pub id: String,
+    pub source: CatalogSource,
+    pub kind: ContentKind,
+    pub title: String,
+    pub summary: String,
+    pub author: String,
+    pub icon_url: Option<String>,
+    pub web_url: String,
+    pub downloads: u64,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogFile {
+    pub id: String,
+    pub project_id: String,
+    pub name: String,
+    pub version_number: String,
+    pub file_name: String,
+    pub url: String,
+    pub size: u64,
+    #[serde(default)]
+    pub sha1: Option<String>,
+    #[serde(default)]
+    pub sha512: Option<String>,
+    pub game_versions: Vec<String>,
+    pub loaders: Vec<String>,
+    pub release_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogPage {
+    pub projects: Vec<CatalogProject>,
+    pub total: u64,
+    pub offset: u32,
+    pub limit: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogStatus {
+    pub modrinth: bool,
+    pub curseforge: bool,
+    pub curseforge_key_configured: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentItem {
+    pub id: String,
+    pub instance_id: String,
+    pub kind: ContentKind,
+    pub name: String,
+    pub file_name: String,
+    pub enabled: bool,
+    pub size_bytes: u64,
+    pub source: Option<CatalogSource>,
+    pub project_id: Option<String>,
+    pub version_id: Option<String>,
+    pub installed_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorldItem {
+    pub id: String,
+    pub instance_id: String,
+    pub name: String,
+    pub folder_name: String,
+    pub size_bytes: u64,
+    pub modified_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallContentArgs {
+    pub instance_id: String,
+    pub kind: ContentKind,
+    pub project: CatalogProject,
+    pub file: CatalogFile,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AppearanceProfile {
+    pub id: String,
+    pub account_id: String,
+    pub name: String,
+    pub skin_data_url: Option<String>,
+    pub skin_variant: String,
+    pub cape_data_url: Option<String>,
+    pub cape_enabled: bool,
+    pub cape_color: String,
+    pub cape_pattern: String,
+    pub wings: String,
+    pub aura_color: String,
+    pub aura_enabled: bool,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EngineStatus {
+    pub id: String,
+    pub name: String,
+    pub source_url: String,
+    pub source_commit: String,
+    pub license: String,
+    pub integrated: bool,
+    pub runtime_ready: bool,
+    pub gameplay_verified: bool,
+    pub renderers: Vec<String>,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PerformancePreset {
+    pub id: String,
+    pub name: String,
+    pub render_distance: u32,
+    pub simulation_distance: u32,
+    pub max_fps: u32,
+    pub particles: u32,
+    pub clouds: u32,
+    pub graphics_mode: u32,
 }

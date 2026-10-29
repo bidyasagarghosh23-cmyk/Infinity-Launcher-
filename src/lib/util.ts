@@ -5,7 +5,7 @@ import type { SystemInfo } from './types';
 /** Do not offer to start a desktop JVM on a mobile operating system. */
 export function javaLaunchLimitation(system: SystemInfo | null): string | null {
   if (system?.os === 'android') {
-    return 'Android preview: manage instances and downloads here. Playing Minecraft: Java Edition requires an Android JVM, which is not bundled. Use the Windows version to play.';
+    return 'Android engine integration is staged: Amethyst is selected but not bundled or device-tested yet. Manage instances, content and local appearance here; Play stays disabled until the runtime passes testing.';
   }
   if (system?.os === 'ios') {
     return 'iOS preview: instance management only. Stock iOS cannot run Minecraft: Java Edition.';

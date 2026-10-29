@@ -3,6 +3,18 @@
 import { call } from './bridge';
 import type {
   Account,
+  AppearanceProfile,
+  CatalogFile,
+  CatalogPage,
+  CatalogQuery,
+  CatalogSource,
+  CatalogStatus,
+  ContentItem,
+  ContentKind,
+  EngineStatus,
+  InstallContentArgs,
+  PerformancePreset,
+  WorldItem,
   CreateInstanceArgs,
   DeviceCode,
   GameStatus,
@@ -56,4 +68,22 @@ export const api = {
     call<string[]>('read_log', { instanceId, lines }),
   consoleLines: () => call<string[]>('console_lines'),
   clearLog: (instanceId: string) => call<void>('clear_log', { instanceId }),
+
+  catalogStatus: () => call<CatalogStatus>('catalog_status'),
+  catalogSearch: (query: CatalogQuery) => call<CatalogPage>('catalog_search', { query }),
+  catalogFiles: (source: CatalogSource, projectId: string, kind: ContentKind, mcVersion?: string | null, loader?: string | null) =>
+    call<CatalogFile[]>('catalog_files', { source, projectId, kind, mcVersion, loader }),
+  listContent: (instanceId: string, kind: ContentKind) => call<ContentItem[]>('list_content', { instanceId, kind }),
+  installContent: (args: InstallContentArgs) => call<ContentItem>('install_content', { args }),
+  toggleContent: (instanceId: string, kind: ContentKind, id: string, enabled: boolean) =>
+    call<ContentItem>('toggle_content', { instanceId, kind, id, enabled }),
+  removeContent: (instanceId: string, kind: ContentKind, id: string) =>
+    call<void>('remove_content', { instanceId, kind, id }),
+  listWorlds: (instanceId: string) => call<WorldItem[]>('list_worlds', { instanceId }),
+  listAppearance: () => call<AppearanceProfile[]>('list_appearance'),
+  saveAppearance: (profile: AppearanceProfile) => call<AppearanceProfile>('save_appearance', { profile }),
+  removeAppearance: (id: string) => call<void>('remove_appearance', { id }),
+  performancePresets: () => call<PerformancePreset[]>('performance_presets'),
+  applyPerformance: (instanceId: string, presetId: string) => call<void>('apply_performance', { instanceId, presetId }),
+  engineStatus: () => call<EngineStatus>('engine_status'),
 };

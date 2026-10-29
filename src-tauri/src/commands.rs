@@ -819,3 +819,90 @@ pub async fn open_data_dir(app: AppHandle, state: State<'_, AppState>) -> Result
         .map_err(|err| Error::Message(err.to_string()))?;
     Ok(())
 }
+
+// ---------------------------------------------------------------------------
+// Client hub: catalogs, content, appearance, performance and engine status
+// ---------------------------------------------------------------------------
+
+#[tauri::command]
+pub async fn catalog_status() -> Result<CatalogStatus> {
+    Ok(crate::catalog::status())
+}
+
+#[tauri::command]
+pub async fn catalog_search(state: State<'_, AppState>, query: CatalogQuery) -> Result<CatalogPage> {
+    crate::catalog::search(&state.http, &query).await
+}
+
+#[tauri::command]
+pub async fn catalog_files(
+    state: State<'_, AppState>,
+    source: CatalogSource,
+    project_id: String,
+    kind: ContentKind,
+    mc_version: Option<String>,
+    loader: Option<String>,
+) -> Result<Vec<CatalogFile>> {
+    crate::catalog::files(&state.http, source, &project_id, kind, mc_version.as_deref(), loader.as_deref()).await
+}
+
+#[tauri::command]
+pub async fn list_content(state: State<'_, AppState>, instance_id: String, kind: ContentKind) -> Result<Vec<ContentItem>> {
+    crate::content::list(&state, &instance_id, kind)
+}
+
+#[tauri::command]
+pub async fn install_content(state: State<'_, AppState>, args: InstallContentArgs) -> Result<ContentItem> {
+    crate::content::install(&state, &args).await
+}
+
+#[tauri::command]
+pub async fn toggle_content(
+    state: State<'_, AppState>,
+    instance_id: String,
+    kind: ContentKind,
+    id: String,
+    enabled: bool,
+) -> Result<ContentItem> {
+    crate::content::toggle(&state, &instance_id, kind, &id, enabled)
+}
+
+#[tauri::command]
+pub async fn remove_content(state: State<'_, AppState>, instance_id: String, kind: ContentKind, id: String) -> Result<()> {
+    crate::content::remove(&state, &instance_id, kind, &id)
+}
+
+#[tauri::command]
+pub async fn list_worlds(state: State<'_, AppState>, instance_id: String) -> Result<Vec<WorldItem>> {
+    crate::content::worlds(&state, &instance_id)
+}
+
+#[tauri::command]
+pub async fn list_appearance(state: State<'_, AppState>) -> Result<Vec<AppearanceProfile>> {
+    Ok(crate::appearance::list(&state))
+}
+
+#[tauri::command]
+pub async fn save_appearance(state: State<'_, AppState>, profile: AppearanceProfile) -> Result<AppearanceProfile> {
+    crate::appearance::save(&state, profile)
+}
+
+#[tauri::command]
+pub async fn remove_appearance(state: State<'_, AppState>, id: String) -> Result<()> {
+    crate::appearance::remove(&state, &id)
+}
+
+#[tauri::command]
+pub async fn performance_presets() -> Result<Vec<PerformancePreset>> {
+    Ok(crate::performance::presets())
+}
+
+#[tauri::command]
+pub async fn apply_performance(state: State<'_, AppState>, instance_id: String, preset_id: String) -> Result<()> {
+    crate::performance::apply(&state, &instance_id, &preset_id)
+}
+
+#[tauri::command]
+pub async fn engine_status() -> Result<EngineStatus> {
+    Ok(crate::engine::status())
+}

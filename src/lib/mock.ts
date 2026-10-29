@@ -20,6 +20,16 @@ import type {
   Progress,
   Settings,
   SystemInfo,
+  AppearanceProfile,
+  CatalogFile,
+  CatalogPage,
+  CatalogProject,
+  CatalogQuery,
+  ContentItem,
+  ContentKind,
+  InstallContentArgs,
+  PerformancePreset,
+  WorldItem,
 } from './types';
 
 const release = (id: string, releaseTime: string) => ({
@@ -123,7 +133,11 @@ const defaultSettings: Settings = {
   showSnapshots: false,
   language: 'en',
   selectedInstance: 'fabric-1.21.1',
-  theme: 'infinity',
+  theme: 'lunar',
+  performanceProfile: 'balanced',
+  androidRenderer: 'gl4es',
+  touchControls: true,
+  reduceEffects: false,
 };
 
 function seedInstances(): Instance[] {
@@ -697,6 +711,89 @@ export async function mockCall<T>(command: string, args?: Record<string, unknown
     case 'clear_log':
       return undefined as T;
 
+    case 'catalog_status':
+      return { modrinth: true, curseforge: false, curseforgeKeyConfigured: false } as T;
+
+    case 'catalog_search':
+      return demoCatalogSearch(args?.query as CatalogQuery) as T;
+
+    case 'catalog_files':
+      return demoCatalogFiles(args?.projectId as string, args?.kind as ContentKind) as T;
+
+    case 'list_content':
+      return demoContent.filter((item) => item.instanceId === args?.instanceId && item.kind === args?.kind) as T;
+
+    case 'install_content': {
+      const input = args?.args as InstallContentArgs;
+      const item: ContentItem = {
+        id: input.file.fileName,
+        instanceId: input.instanceId,
+        kind: input.kind,
+        name: input.project.title,
+        fileName: input.file.fileName,
+        enabled: true,
+        sizeBytes: input.file.size,
+        source: input.project.source,
+        projectId: input.project.id,
+        versionId: input.file.id,
+        installedAt: Math.floor(Date.now() / 1000),
+      };
+      demoContent = [...demoContent.filter((entry) => !(entry.instanceId === item.instanceId && entry.kind === item.kind && entry.id === item.id)), item];
+      persistDemoContent();
+      return item as T;
+    }
+
+    case 'toggle_content': {
+      const { instanceId, kind, id, enabled } = args as { instanceId: string; kind: ContentKind; id: string; enabled: boolean };
+      const item = demoContent.find((entry) => entry.instanceId === instanceId && entry.kind === kind && entry.id === id);
+      if (!item) throw new Error('content not found');
+      item.enabled = enabled;
+      persistDemoContent();
+      return item as T;
+    }
+
+    case 'remove_content': {
+      const { instanceId, kind, id } = args as { instanceId: string; kind: ContentKind; id: string };
+      demoContent = demoContent.filter((entry) => !(entry.instanceId === instanceId && entry.kind === kind && entry.id === id));
+      persistDemoContent();
+      return undefined as T;
+    }
+
+    case 'list_worlds':
+      return demoWorlds.filter((world) => world.instanceId === args?.instanceId) as T;
+
+    case 'list_appearance':
+      return [...demoAppearance] as T;
+
+    case 'save_appearance': {
+      const profile = args?.profile as AppearanceProfile;
+      const saved = { ...profile, id: profile.id || `look-${Date.now()}`, updatedAt: Math.floor(Date.now() / 1000) };
+      demoAppearance = [...demoAppearance.filter((entry) => entry.id !== saved.id), saved];
+      persistDemoAppearance();
+      return saved as T;
+    }
+
+    case 'remove_appearance':
+      demoAppearance = demoAppearance.filter((entry) => entry.id !== args?.id);
+      persistDemoAppearance();
+      return undefined as T;
+
+    case 'performance_presets':
+      return DEMO_PRESETS as T;
+
+    case 'apply_performance':
+      return undefined as T;
+
+    case 'engine_status':
+      return {
+        id: 'amethyst', name: 'Amethyst (Pojav successor)',
+        sourceUrl: 'https://github.com/AngelAuraMC/Amethyst-Android',
+        sourceCommit: '28d6e12d68121b7dd75f2e841058a6b7cdfe4a29',
+        license: 'LGPL-3.0', integrated: false, runtimeReady: false, gameplayVerified: false,
+        renderers: ['gl4es', 'mobileglues', 'angle', 'mesa'],
+        message: 'Amethyst is the selected Android Java engine, but this build does not yet bundle or launch it. Android Play remains disabled until runtime packaging, licensing notices and a physical-device gameplay test pass.',
+      } as T;
+
     default:
       throw new Error(`Unknown command: ${command}`);
   }
@@ -719,3 +816,57 @@ export const mockDb = {
     return db.settings;
   },
 };
+
+
+// ---------------------------------------------------------------------------
+// Browser-demo catalog/content/appearance fixtures. Native builds use Rust.
+// ---------------------------------------------------------------------------
+
+const CONTENT_KEY = 'infinity-launcher.demo.content.v1';
+const APPEARANCE_KEY = 'infinity-launcher.demo.appearance.v1';
+
+function readDemoArray<T>(key: string): T[] {
+  try { return JSON.parse(localStorage.getItem(key) ?? '[]') as T[]; } catch { return []; }
+}
+let demoContent: ContentItem[] = readDemoArray<ContentItem>(CONTENT_KEY);
+let demoAppearance: AppearanceProfile[] = readDemoArray<AppearanceProfile>(APPEARANCE_KEY);
+let demoWorlds: WorldItem[] = [
+  { id: 'skyblock', instanceId: 'fabric-1.21.1', name: 'Skyblock Reborn', folderName: 'skyblock', sizeBytes: 48_200_000, modifiedAt: Math.floor(Date.now() / 1000) - 7200 },
+];
+function persistDemoContent() { try { localStorage.setItem(CONTENT_KEY, JSON.stringify(demoContent)); } catch { /* demo only */ } }
+function persistDemoAppearance() { try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(demoAppearance)); } catch { /* demo only */ } }
+
+const DEMO_PROJECTS: Array<CatalogProject & { loaders: string[] }> = [
+  { id: 'sodium', source: 'modrinth', kind: 'mod', title: 'Sodium', summary: 'Modern rendering engine and client-side optimization for Minecraft.', author: 'CaffeineMC', iconUrl: null, webUrl: 'https://modrinth.com/mod/sodium', downloads: 92_000_000, updatedAt: '2026-10-01T00:00:00Z', loaders: ['fabric', 'quilt', 'neoforge'] },
+  { id: 'lithium', source: 'modrinth', kind: 'mod', title: 'Lithium', summary: 'No-compromises game logic optimization for servers and singleplayer.', author: 'CaffeineMC', iconUrl: null, webUrl: 'https://modrinth.com/mod/lithium', downloads: 41_000_000, updatedAt: '2026-09-20T00:00:00Z', loaders: ['fabric', 'quilt', 'neoforge'] },
+  { id: 'iris', source: 'modrinth', kind: 'mod', title: 'Iris Shaders', summary: 'A modern shaders mod for Minecraft, compatible with existing OptiFine shaderpacks.', author: 'coderbot', iconUrl: null, webUrl: 'https://modrinth.com/mod/iris', downloads: 38_000_000, updatedAt: '2026-09-12T00:00:00Z', loaders: ['fabric', 'quilt'] },
+  { id: 'fabric-api', source: 'modrinth', kind: 'mod', title: 'Fabric API', summary: 'Essential hooks for Fabric mods.', author: 'FabricMC', iconUrl: null, webUrl: 'https://modrinth.com/mod/fabric-api', downloads: 120_000_000, updatedAt: '2026-10-10T00:00:00Z', loaders: ['fabric'] },
+  { id: 'faithful', source: 'modrinth', kind: 'resourcepack', title: 'Faithful 32x', summary: 'The original 32x upgrade of the default Minecraft textures.', author: 'Faithful Team', iconUrl: null, webUrl: 'https://modrinth.com/resourcepack/faithful-32x', downloads: 14_000_000, updatedAt: '2026-08-01T00:00:00Z', loaders: [] },
+  { id: 'complementary', source: 'modrinth', kind: 'shader', title: 'Complementary Shaders', summary: 'Beautiful, optimized shaders with a wide range of presets.', author: 'EminGTR', iconUrl: null, webUrl: 'https://modrinth.com/shader/complementary-reimagined', downloads: 22_000_000, updatedAt: '2026-09-01T00:00:00Z', loaders: [] },
+  { id: 'skyblock-reborn', source: 'modrinth', kind: 'world', title: 'Skyblock Reborn', summary: 'A modern skyblock survival map with progression and challenges.', author: 'Community', iconUrl: null, webUrl: 'https://modrinth.com/world/skyblock-reborn', downloads: 900_000, updatedAt: '2026-07-01T00:00:00Z', loaders: [] },
+  { id: 'fabulously-optimized', source: 'modrinth', kind: 'modpack', title: 'Fabulously Optimized', summary: 'A simple Minecraft modpack focused on performance and graphics.', author: 'FO Team', iconUrl: null, webUrl: 'https://modrinth.com/modpack/fabulously-optimized', downloads: 8_000_000, updatedAt: '2026-10-05T00:00:00Z', loaders: ['fabric'] },
+];
+
+function demoCatalogSearch(query: CatalogQuery): CatalogPage {
+  const q = (query.query ?? '').toLowerCase();
+  const projects = DEMO_PROJECTS.filter((project) => project.kind === query.kind)
+    .filter((project) => !q || project.title.toLowerCase().includes(q) || project.summary.toLowerCase().includes(q))
+    .filter((project) => query.kind !== 'mod' || !query.loader || query.loader === 'vanilla' || project.loaders.includes(query.loader));
+  return { projects, total: projects.length, offset: query.offset ?? 0, limit: 20 };
+}
+
+function demoCatalogFiles(projectId: string, kind: ContentKind): CatalogFile[] {
+  const project = DEMO_PROJECTS.find((entry) => entry.id === projectId);
+  const ext = kind === 'mod' ? 'jar' : 'zip';
+  return [{
+    id: `${projectId}-demo`, projectId, name: 'Demo release', versionNumber: '1.0.0',
+    fileName: `${projectId}-1.0.0.${ext}`, url: `https://cdn.modrinth.com/data/${projectId}/demo.${ext}`,
+    size: 2_400_000, sha1: null, sha512: null, gameVersions: ['1.21.1', '1.20.1'], loaders: project?.loaders ?? [], releaseType: 'release',
+  }];
+}
+
+const DEMO_PRESETS: PerformancePreset[] = [
+  { id: 'battery', name: 'Battery saver', renderDistance: 6, simulationDistance: 4, maxFps: 45, particles: 2, clouds: 0, graphicsMode: 0 },
+  { id: 'balanced', name: 'Balanced', renderDistance: 10, simulationDistance: 8, maxFps: 60, particles: 1, clouds: 1, graphicsMode: 1 },
+  { id: 'quality', name: 'Quality', renderDistance: 16, simulationDistance: 12, maxFps: 120, particles: 0, clouds: 2, graphicsMode: 2 },
+];

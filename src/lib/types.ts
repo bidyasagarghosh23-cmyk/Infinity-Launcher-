@@ -55,6 +55,10 @@ export interface Settings {
   language: string;
   selectedInstance: string | null;
   theme: string;
+  performanceProfile: string;
+  androidRenderer: string;
+  touchControls: boolean;
+  reduceEffects: boolean;
 }
 
 export interface Account {
@@ -147,4 +151,131 @@ export interface CreateInstanceArgs {
 export interface InstallArgs {
   instanceId: string;
   fresh?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Client hub: catalogs, content, appearance, performance and engine status
+// ---------------------------------------------------------------------------
+
+export type ContentKind = 'mod' | 'resourcepack' | 'shader' | 'world' | 'datapack' | 'modpack';
+export type CatalogSource = 'modrinth' | 'curseforge';
+
+export interface CatalogQuery {
+  source: CatalogSource;
+  kind: ContentKind;
+  query?: string;
+  mcVersion?: string | null;
+  loader?: string | null;
+  offset?: number;
+}
+
+export interface CatalogProject {
+  id: string;
+  source: CatalogSource;
+  kind: ContentKind;
+  title: string;
+  summary: string;
+  author: string;
+  iconUrl?: string | null;
+  webUrl: string;
+  downloads: number;
+  updatedAt: string;
+}
+
+export interface CatalogFile {
+  id: string;
+  projectId: string;
+  name: string;
+  versionNumber: string;
+  fileName: string;
+  url: string;
+  size: number;
+  sha1?: string | null;
+  sha512?: string | null;
+  gameVersions: string[];
+  loaders: string[];
+  releaseType: string;
+}
+
+export interface CatalogPage {
+  projects: CatalogProject[];
+  total: number;
+  offset: number;
+  limit: number;
+}
+
+export interface CatalogStatus {
+  modrinth: boolean;
+  curseforge: boolean;
+  curseforgeKeyConfigured: boolean;
+}
+
+export interface ContentItem {
+  id: string;
+  instanceId: string;
+  kind: ContentKind;
+  name: string;
+  fileName: string;
+  enabled: boolean;
+  sizeBytes: number;
+  source?: CatalogSource | null;
+  projectId?: string | null;
+  versionId?: string | null;
+  installedAt: number;
+}
+
+export interface WorldItem {
+  id: string;
+  instanceId: string;
+  name: string;
+  folderName: string;
+  sizeBytes: number;
+  modifiedAt: number;
+}
+
+export interface InstallContentArgs {
+  instanceId: string;
+  kind: ContentKind;
+  project: CatalogProject;
+  file: CatalogFile;
+}
+
+export interface AppearanceProfile {
+  id: string;
+  accountId: string;
+  name: string;
+  skinDataUrl?: string | null;
+  skinVariant: string;
+  capeDataUrl?: string | null;
+  capeEnabled: boolean;
+  capeColor: string;
+  capePattern: string;
+  wings: string;
+  auraColor: string;
+  auraEnabled: boolean;
+  updatedAt: number;
+}
+
+export interface EngineStatus {
+  id: string;
+  name: string;
+  sourceUrl: string;
+  sourceCommit: string;
+  license: string;
+  integrated: boolean;
+  runtimeReady: boolean;
+  gameplayVerified: boolean;
+  renderers: string[];
+  message: string;
+}
+
+export interface PerformancePreset {
+  id: string;
+  name: string;
+  renderDistance: number;
+  simulationDistance: number;
+  maxFps: number;
+  particles: number;
+  clouds: number;
+  graphicsMode: number;
 }

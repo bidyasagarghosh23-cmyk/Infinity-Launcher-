@@ -11,6 +11,10 @@ import type { Route } from '../../store/launcher';
 const TITLES: Record<Route, { title: string; subtitle: string }> = {
   home: { title: 'Home', subtitle: 'Your next world is one click away' },
   instances: { title: 'Instances', subtitle: 'Every modpack, version and profile in one place' },
+  discover: { title: 'Discover', subtitle: 'Browse Modrinth and CurseForge content' },
+  content: { title: 'Content', subtitle: 'Enable, disable and remove per-instance content' },
+  appearance: { title: 'Appearance', subtitle: 'Local skins, capes and cosmetic profiles' },
+  engine: { title: 'Engine', subtitle: 'Amethyst integration status and performance presets' },
   console: { title: 'Console', subtitle: 'Live game output and installer progress' },
   accounts: { title: 'Accounts', subtitle: 'Microsoft, offline and everything between' },
   settings: { title: 'Settings', subtitle: 'Memory, Java, storage and downloads' },

@@ -72,6 +72,14 @@ g.matchMedia = () => ({
 g.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
 g.scrollTo = () => {};
 dom.window.HTMLElement.prototype.scrollIntoView = () => {};
+// jsdom has no canvas backend; the appearance preview only needs a no-op 2D API.
+dom.window.HTMLCanvasElement.prototype.getContext = () => ({
+  imageSmoothingEnabled: false,
+  clearRect() {}, fillRect() {}, drawImage() {}, beginPath() {}, moveTo() {}, lineTo() {}, closePath() {}, fill() {},
+  createRadialGradient: () => ({ addColorStop() {} }),
+  createLinearGradient: () => ({ addColorStop() {} }),
+  fillStyle: '',
+});
 g.IS_REACT_ACT_ENVIRONMENT = true;
 
 await build({
@@ -136,10 +144,15 @@ must('Infinity Launcher', 'brand');
 must('Run it anywhere', 'platforms strip');
 console.log('route /home ok');
 
-for (const label of ['Instances', 'Console', 'Accounts', 'Settings']) {
+for (const label of ['Instances', 'Discover', 'Content', 'Appearance', 'Engine', 'Console', 'Accounts', 'Settings']) {
   await clickByText(label);
   fs.writeFileSync(path.join(outDir, `smoke-${label}.html`), document.body.innerHTML);
   console.log(`route /${label.toLowerCase()} ok — ${text().length} chars`);
+  if (label === 'Discover') must('Discover content', 'catalog browser');
+  if (label === 'Content') must('Content manager', 'content toggles');
+  if (label === 'Appearance') must('Appearance studio', 'local cosmetics');
+  if (label === 'Engine') { must('Engine & performance', 'engine status'); must('Not bundled yet', 'honest engine status'); }
+  if (label === 'Settings') must('Java 21', 'java runtime list');
 }
 
 must('Java 21', 'java runtime list');
@@ -197,7 +210,7 @@ await act(async () => {
     route: 'home',
   });
 });
-must('Android preview: manage instances and downloads here.', 'mobile limitation banner');
+must('Android engine integration is staged', 'mobile limitation banner');
 const mobilePlay = [...document.querySelectorAll('button')].filter(
   (button) => button.textContent?.trim() === 'Play',
 );

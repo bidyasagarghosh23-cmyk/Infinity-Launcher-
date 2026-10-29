@@ -1,4 +1,4 @@
-import { Boxes, Home, Settings2, Terminal, Users, Zap } from 'lucide-react';
+import { Boxes, Compass, Home, Palette, Puzzle, Settings2, Terminal, Users, Zap, Cpu } from 'lucide-react';
 import { LogoLockup } from '../brand/Logo';
 import { Avatar } from '../brand/Avatar';
 import { useLauncher, selectSelectedInstance } from '../../store/launcher';
@@ -9,6 +9,10 @@ import { LoaderBadge } from '../brand/LoaderBadge';
 const NAV: Array<{ id: Route; label: string; icon: typeof Home; hint?: string }> = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'instances', label: 'Instances', icon: Boxes },
+  { id: 'discover', label: 'Discover', icon: Compass },
+  { id: 'content', label: 'Content', icon: Puzzle },
+  { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'engine', label: 'Engine', icon: Cpu },
   { id: 'console', label: 'Console', icon: Terminal },
   { id: 'accounts', label: 'Accounts', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings2 },

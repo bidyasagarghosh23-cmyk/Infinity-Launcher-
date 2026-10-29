@@ -13,7 +13,7 @@ import type {
   VersionManifest,
 } from '../lib/types';
 
-export type Route = 'home' | 'instances' | 'console' | 'accounts' | 'settings';
+export type Route = 'home' | 'instances' | 'discover' | 'content' | 'appearance' | 'engine' | 'console' | 'accounts' | 'settings';
 
 export interface Toast {
   id: number;
@@ -199,7 +199,7 @@ export const useLauncher = create<LauncherState>((set, get) => ({
   async play(instanceId) {
     const limitation = javaLaunchLimitation(get().system);
     if (limitation) {
-      get().toast({ title: 'Java gameplay is desktop-only', description: limitation, tone: 'info' });
+      get().toast({ title: 'Android engine not ready', description: limitation, tone: 'info' });
       return;
     }
     try {

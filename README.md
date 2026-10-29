@@ -1,15 +1,15 @@
-# Infinity Launcher
+# Infinity Client
 
 A **custom Minecraft: Java Edition launcher** built once and shipped to
 **Windows, macOS, Linux, Android and iOS**.
 
-Infinity Launcher is a native app — not a website wrapper around someone else's
+Infinity Client is a native app — not a website wrapper around someone else's
 launcher. It downloads Minecraft itself, resolves version metadata, applies
 Mojang's rule engine, builds the JVM command line and launches the game. The UI
 is React + TypeScript; the launcher core is Rust on top of [Tauri 2](https://tauri.app).
 
 <p align="center">
-  <img src="src-tauri/icons/128x128@2x.png" width="112" alt="Infinity Launcher icon" />
+  <img src="src-tauri/icons/128x128@2x.png" width="112" alt="Infinity Client icon" />
 </p>
 
 <p align="center">
@@ -113,7 +113,7 @@ Everything lives under one directory (overridable with `INFINITY_DATA_DIR`,
 otherwise the OS data dir):
 
 ```
-Infinity Launcher/
+Infinity Client/
 ├─ settings.json      accounts.json      instances.json
 ├─ versions/          libraries/         assets/       natives/
 ├─ runtime/           (managed JREs)
@@ -141,7 +141,7 @@ launchers without conversion.
 
 ## Legal
 
-Infinity Launcher is an unofficial, community project. It is **not affiliated
+Infinity Client is an unofficial, community project. It is **not affiliated
 with, endorsed by, or associated with Mojang Studios or Microsoft**. “Minecraft”
 is a trademark of Mojang Synergies AB. You must own a legitimate copy of
 Minecraft: Java Edition to play online.

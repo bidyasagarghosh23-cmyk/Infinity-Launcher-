@@ -1,14 +1,14 @@
-# Infinity Launcher — native downloads
+# Infinity Client — native downloads
 
-Built from commit `72b9f5e1bdb5d0ee71e6c281e57ad584ef76bd44`.
+Built from commit `8ea4a651bdb5d0ee71e6c281e57ad584ef76bd44`.
 
-Release page: <https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/tag/v1.0.0-preview.40863411581>
+Release page: <https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/tag/v2.0.0>
 
 | Platform | File | Size | Download |
 |---|---|---:|---|
-| Android 8+ (ARM64 / x86_64) | `Infinity-Launcher-1.0.0-android-preview.apk` | 86.3 MB | [APK](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v1.0.0-preview.40863411581/Infinity-Launcher-1.0.0-android-preview.apk) |
-| Windows 10/11 x64 | `Infinity-Launcher-1.0.0-windows-x64-setup.exe` | 2.7 MB | [Installer](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v1.0.0-preview.40863411581/Infinity-Launcher-1.0.0-windows-x64-setup.exe) |
-| Windows 10/11 x64 | `Infinity-Launcher-1.0.0-windows-x64.exe` | 6.3 MB | [Standalone EXE](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v1.0.0-preview.40863411581/Infinity-Launcher-1.0.0-windows-x64.exe) |
+| Android 8+ (ARM64 / x86_64) | `infinity-client-2.0.apk` | 86.3 MB | [APK](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v2.0.0/infinity-client-2.0.apk) |
+| Windows 10/11 x64 | `infinity-client-2.0-windows-x64-setup.exe` | 2.7 MB | [Installer](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v2.0.0/infinity-client-2.0-windows-x64-setup.exe) |
+| Windows 10/11 x64 | `infinity-client-2.0-windows-x64.exe` | 6.3 MB | [Standalone EXE](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v2.0.0/infinity-client-2.0-windows-x64.exe) |
 
 ## What is new in this preview
 
@@ -35,8 +35,8 @@ Release page: <https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/rele
 
 ## Verify and rebuild
 
-- [SHA256SUMS.txt](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v1.0.0-preview.40863411581/SHA256SUMS.txt)
-- [INSTALL.md](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v1.0.0-preview.40863411581/INSTALL.md)
+- [SHA256SUMS.txt](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v2.0.0/SHA256SUMS.txt)
+- [INSTALL.md](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/releases/download/v2.0.0/INSTALL.md)
 - [Successful package build run](https://github.com/bidyasagarghosh23-cmyk/Infinity-Launcher-/actions/runs/40863411581)
 - Packaging instructions: [docs/PACKAGING.md](docs/PACKAGING.md)
 - Engine comparison: [docs/ENGINE_COMPARISON.md](docs/ENGINE_COMPARISON.md)

@@ -13,7 +13,7 @@ import { BlockIcon } from '../brand/BlockIcon';
 import { LoaderBadge } from '../brand/LoaderBadge';
 import { Button } from '../ui/Button';
 import { Progress as ProgressBar } from '../ui/Progress';
-import { cn, formatPlaytime, formatRelative } from '../../lib/util';
+import { cn, formatPlaytime, formatRelative, javaLaunchLimitation } from '../../lib/util';
 import { useLauncher } from '../../store/launcher';
 import { api } from '../../lib/api';
 
@@ -24,6 +24,7 @@ export function InstanceCard({ instance, progress }: { instance: Instance; progr
   const remove = useLauncher((state) => state.removeInstance);
   const selectInstance = useLauncher((state) => state.selectInstance);
   const selectedId = useLauncher((state) => state.settings?.selectedInstance);
+  const launchLimitation = javaLaunchLimitation(useLauncher((state) => state.system));
   const running = useLauncher((state) => state.running[instance.id]?.running ?? false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -109,7 +110,8 @@ export function InstanceCard({ instance, progress }: { instance: Instance; progr
               await selectInstance(instance.id);
               await play(instance.id);
             }}
-            disabled={installing}
+            disabled={installing || Boolean(launchLimitation)}
+            title={launchLimitation ?? undefined}
           >
             Play
           </Button>

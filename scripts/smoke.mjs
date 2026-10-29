@@ -181,6 +181,37 @@ must('Offline profile', 'account modal offline');
 fs.writeFileSync(path.join(outDir, 'smoke-account.html'), document.body.innerHTML);
 console.log('add-account modal ok');
 
+// The Android package is a manager, not a desktop-JVM emulator. Make that
+// limitation visible and prevent every UI launch path from starting a game.
+// Changing the route unmounts the account dialog along with its page.
+const beforeMobile = globalThis.window.__store.getState();
+const desktopSystem = beforeMobile.system;
+const installedInstance = beforeMobile.instances.find((instance) => instance.installed);
+if (!desktopSystem || !installedInstance) throw new Error('mobile smoke fixture is missing');
+await act(async () => {
+  globalThis.window.__store.setState({
+    system: { ...desktopSystem, os: 'android', arch: 'aarch64', platform: 'mobile', java: [] },
+    route: 'home',
+  });
+});
+must('Android preview: manage instances and downloads here.', 'mobile limitation banner');
+const mobilePlay = [...document.querySelectorAll('button')].filter(
+  (button) => button.textContent?.trim() === 'Play',
+);
+if (!mobilePlay.length || mobilePlay.some((button) => !button.disabled)) {
+  throw new Error('Android must not offer an enabled Play button');
+}
+await act(async () => {
+  await globalThis.window.__store.getState().play(installedInstance.id);
+});
+if (globalThis.window.__store.getState().running[installedInstance.id]?.running) {
+  throw new Error('Android store attempted to launch a desktop JVM');
+}
+await act(async () => {
+  globalThis.window.__store.setState({ system: desktopSystem, route: 'home' });
+});
+console.log('Android limitation and launch guard ok');
+
 const fatal = errors.filter(
   (line) =>
     !/Not implemented: (HTMLCanvasElement|window\.scrollTo)/.test(line) &&

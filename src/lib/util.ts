@@ -1,5 +1,17 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { SystemInfo } from './types';
+
+/** Do not offer to start a desktop JVM on a mobile operating system. */
+export function javaLaunchLimitation(system: SystemInfo | null): string | null {
+  if (system?.os === 'android') {
+    return 'Android preview: manage instances and downloads here. Playing Minecraft: Java Edition requires an Android JVM, which is not bundled. Use the Windows version to play.';
+  }
+  if (system?.os === 'ios') {
+    return 'iOS preview: instance management only. Stock iOS cannot run Minecraft: Java Edition.';
+  }
+  return null;
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

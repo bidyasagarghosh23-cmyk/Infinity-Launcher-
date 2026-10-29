@@ -173,7 +173,7 @@ export function Settings() {
               <Button size="sm" variant="ghost" onClick={detectJava} loading={detecting} icon={<RefreshCw className="h-3.5 w-3.5" />}>
                 Rescan
               </Button>
-              {isNative ? (
+              {isNative && system?.platform !== 'mobile' ? (
                 <Button
                   size="sm"
                   variant="primary"

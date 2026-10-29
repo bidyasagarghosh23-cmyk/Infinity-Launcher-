@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../lib/api';
 import { subscribe } from '../lib/bridge';
+import { javaLaunchLimitation } from '../lib/util';
 import type {
   Account,
   CreateInstanceArgs,
@@ -196,6 +197,11 @@ export const useLauncher = create<LauncherState>((set, get) => ({
   },
 
   async play(instanceId) {
+    const limitation = javaLaunchLimitation(get().system);
+    if (limitation) {
+      get().toast({ title: 'Java gameplay is desktop-only', description: limitation, tone: 'info' });
+      return;
+    }
     try {
       const status = await api.launchInstance(instanceId);
       set((state) => ({ running: { ...state.running, [instanceId]: status } }));

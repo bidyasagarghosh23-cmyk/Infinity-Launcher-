@@ -93,7 +93,7 @@ pub async fn save_settings(state: State<'_, AppState>, settings: Settings) -> Re
         *guard = settings.clone();
     }
     if previous_dir != settings.data_dir {
-        let paths = Paths::resolve(settings.data_dir.as_deref());
+        let paths = Paths::resolve_from(settings.data_dir.as_deref(), state.paths().root);
         paths.ensure()?;
         state.set_paths(paths.clone());
         if let Ok(accounts) = std::fs::read(paths.accounts_file()) {
@@ -400,6 +400,14 @@ pub async fn launch_instance(
     state: State<'_, AppState>,
     instance_id: String,
 ) -> Result<GameStatus> {
+    if cfg!(any(target_os = "android", target_os = "ios")) {
+        return Err(Error::Message(
+            "This mobile build manages instances and downloads, but does not bundle a Java runtime. \
+             Minecraft: Java Edition cannot be launched on this device. Use the desktop version to play."
+                .into(),
+        ));
+    }
+
     let instance = state
         .instances_snapshot()
         .into_iter()

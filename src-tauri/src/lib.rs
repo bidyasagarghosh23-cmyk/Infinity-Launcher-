@@ -34,7 +34,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .manage(AppState::new(http))
         .invoke_handler(tauri::generate_handler![
             commands::system_info,
             commands::get_settings,
@@ -65,11 +64,10 @@ pub fn run() {
             commands::open_data_dir
         ])
         .setup(|app| {
-            // Make sure the on-disk layout exists before the UI asks about it.
-            let state = app.state::<AppState>();
-            if let Err(err) = state.paths.ensure() {
-                eprintln!("[infinity] could not create data directories: {err}");
-            }
+            // Android and iOS must write inside their own app sandbox, not a
+            // relative directory under the process working directory.
+            let platform_data_dir = app.path().app_data_dir()?;
+            app.manage(AppState::new(http, Some(platform_data_dir)));
             Ok(())
         })
         .run(tauri::generate_context!())

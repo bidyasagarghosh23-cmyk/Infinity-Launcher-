@@ -1,0 +1,211 @@
+name: Android and Windows packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [arena/51d422eb-infinity-launcher]
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'public/**'
+      - 'package*.json'
+      - 'index.html'
+      - 'vite.config.ts'
+      - 'tsconfig*.json'
+      - 'tailwind.config.js'
+      - 'postcss.config.js'
+      - '.github/workflows/packages.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  windows:
+    name: Windows x64 executable and installer
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci --no-audit --no-fund
+      - name: Test the UI
+        run: npm test
+      - name: Build native Windows release
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run tauri build -- --ci --target x86_64-pc-windows-msvc --bundles nsis 2>&1 | tee windows-build.log
+      - name: Collect executables
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p packages
+          binary=src-tauri/target/x86_64-pc-windows-msvc/release/infinity-launcher.exe
+          if [[ ! -f "$binary" ]]; then
+            binary=src-tauri/target/release/infinity-launcher.exe
+          fi
+          test -f "$binary" || { find src-tauri/target -name '*.exe'; exit 1; }
+          cp "$binary" packages/Infinity-Launcher-1.0.0-windows-x64.exe
+          setup=$(find src-tauri/target -path '*/bundle/nsis/*-setup.exe' -type f -print -quit)
+          test -n "$setup" || { echo 'NSIS installer was not produced'; exit 1; }
+          cp "$setup" packages/Infinity-Launcher-1.0.0-windows-x64-setup.exe
+      - name: Report a build failure in the job annotations
+        if: failure()
+        shell: bash
+        run: |
+          if [[ -f windows-build.log ]]; then
+            node -e 'const fs=require("fs"); const text=fs.readFileSync("windows-build.log","utf8").replace(/\u001b\[[0-9;]*m/g,""); const tail=text.slice(-14000).replace(/%/g,"%25").replace(/\r/g,"%0D").replace(/\n/g,"%0A"); console.log("::error title=Windows build log::"+tail);'
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-x64
+          path: packages/*.exe
+          if-no-files-found: error
+          compression-level: 0
+
+  android:
+    name: Android sideload APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools ndk;29.0.14206865
+      - name: Configure Android NDK
+        run: echo "NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci --no-audit --no-fund
+      - name: Generate the Tauri Android project
+        run: npm run tauri android init -- --ci --skip-targets-install
+      - name: Build ARM64 and x86_64 APK
+        run: |
+          set -euo pipefail
+          npm run tauri android build -- --ci --apk --debug --target aarch64 x86_64 2>&1 | tee android-build.log
+      - name: Verify and collect the signed preview APK
+        run: |
+          set -euo pipefail
+          mkdir -p packages
+          apk=$(find src-tauri/gen/android/app/build/outputs/apk -name '*universal*debug*.apk' -type f -print -quit)
+          test -n "$apk" || { find src-tauri/gen/android/app/build/outputs -type f; exit 1; }
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          aapt=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)
+          test -x "$apksigner" && test -x "$aapt"
+          "$apksigner" verify --verbose "$apk"
+          "$aapt" dump badging "$apk" | grep -E 'package:|sdkVersion:|targetSdkVersion:|native-code:'
+          cp "$apk" packages/Infinity-Launcher-1.0.0-android-preview.apk
+      - name: Report a build failure in the job annotations
+        if: failure()
+        run: |
+          if [[ -f android-build.log ]]; then
+            node -e 'const fs=require("fs"); const text=fs.readFileSync("android-build.log","utf8").replace(/\u001b\[[0-9;]*m/g,""); const tail=text.slice(-14000).replace(/%/g,"%25").replace(/\r/g,"%0D").replace(/\n/g,"%0A"); console.log("::error title=Android build log::"+tail);'
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-apk
+          path: packages/*.apk
+          if-no-files-found: error
+          compression-level: 0
+
+  release:
+    name: Publish downloadable preview packages
+    needs: [windows, android]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: '{windows-x64,android-apk}'
+          path: packages
+          merge-multiple: true
+      - name: Check package formats and generate checksums
+        run: |
+          set -euo pipefail
+          test "$(find packages -maxdepth 1 -name '*.exe' | wc -l)" -eq 2
+          test "$(find packages -maxdepth 1 -name '*.apk' | wc -l)" -eq 1
+          file packages/*
+          file packages/*.exe | grep 'PE32+'
+          unzip -t packages/*.apk > /dev/null
+          (cd packages && sha256sum *.exe *.apk > SHA256SUMS.txt)
+      - name: Write installation notes
+        shell: bash
+        run: |
+          cat > packages/INSTALL.md <<'EOF'
+          # Infinity Launcher 1.0.0 — preview packages
+
+          ## Windows 10/11, 64-bit Intel/AMD
+
+          - **Infinity-Launcher-1.0.0-windows-x64-setup.exe**: recommended installer.
+          - **Infinity-Launcher-1.0.0-windows-x64.exe**: standalone launcher executable.
+          - These are release builds, but are not code-signed. Windows SmartScreen may warn about an unknown publisher. Verify the source and SHA-256 checksum before running.
+          - Microsoft Edge WebView2 Runtime is required. The installer can download its bootstrapper; the standalone executable needs WebView2 already installed.
+          - Minecraft: Java Edition needs a compatible Java runtime. Settings can install Java 21 on desktop.
+
+          ## Android 8+, ARM64 phones and x86_64 emulator
+
+          - **Infinity-Launcher-1.0.0-android-preview.apk**: universal sideload APK, debug-signed for testing, not a Play Store release.
+          - Open the APK on the device and allow installation from that source when Android asks. Do not disable Play Protect globally.
+          - This preview manages instances and downloads. **It cannot play Minecraft: Java Edition:** no Android JVM/rendering bridge is bundled. Use Windows to play.
+          - The CI debug signing key is not a persistent release identity. A future preview may require uninstalling this one before installing; back up instance data first.
+          - No stable release-signing key is included in the repository or this download.
+
+          ## Account setup
+
+          Microsoft sign-in requires the launcher owner's Azure application client ID (`INFINITY_MS_CLIENT_ID`); it is not configured by these packages. Offline profiles are available, but servers may require a legitimate Microsoft/Minecraft account.
+
+          ## Verification
+
+          Compare downloads against `SHA25SUMS.txt`. These packages were compiled from the commit shown in the release metadata. Build success and APK signature verification do not replace testing on real devices.
+
+          This is an unofficial launcher, not affiliated with Mojang Studios or Microsoft. You must own Minecraft: Java Edition to play online.
+          EOF
+          sed -i 's/SHA25SUMS.txt/SHA256SUMS.txt/' packages/INSTALL.md
+      - name: Publish a GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v1.0.0-preview.${{ github.run_id }}.${{ github.run_attempt }}
+        shell: bash
+        run: |
+          gh release create "$TAG" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Infinity Launcher 1.0.0 — Android & Windows preview" \
+            --notes-file packages/INSTALL.md \
+            packages/Infinity-Launcher-1.0.0-android-preview.apk \
+            packages/Infinity-Launcher-1.0.0-windows-x64.exe \
+            packages/Infinity-Launcher-1.0.0-windows-x64-setup.exe \
+            packages/SHA25SUMS.txt \
+            packages/INSTALL.md

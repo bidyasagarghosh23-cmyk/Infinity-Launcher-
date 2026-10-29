@@ -24,7 +24,7 @@ import { Button } from '../components/ui/Button';
 import { Progress } from '../components/ui/Progress';
 import { isNative } from '../lib/bridge';
 import { api } from '../lib/api';
-import { cn, formatRelative, platformLabel, requiredJava } from '../lib/util';
+import { cn, formatRelative, javaLaunchLimitation, platformLabel, requiredJava } from '../lib/util';
 
 export function Home() {
   const instances = useLauncher((state) => state.instances);
@@ -42,6 +42,7 @@ export function Home() {
 
   const account = accounts[0];
   const isRunning = selected ? Boolean(running[selected.id]?.running) : false;
+  const launchLimitation = javaLaunchLimitation(system);
   const activeProgress = selected ? progress[selected.id] : undefined;
   const installing = Boolean(activeProgress && activeProgress.stage !== 'error');
 
@@ -174,7 +175,8 @@ export function Home() {
                     size="xl"
                     icon={<Play className="h-5 w-5 fill-current" />}
                     onClick={() => play(selected.id)}
-                    disabled={installing || !account}
+                    disabled={installing || !account || Boolean(launchLimitation)}
+                    title={launchLimitation ?? undefined}
                     className="min-w-[168px]"
                   >
                     Play
@@ -308,7 +310,7 @@ export function Home() {
                     key={instance.id}
                     onClick={() => {
                       void selectInstance(instance.id);
-                      void (instance.installed
+                      void (instance.installed && !launchLimitation
                         ? play(instance.id)
                         : install(instance.id));
                     }}

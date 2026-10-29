@@ -11,14 +11,34 @@ pub struct Paths {
 impl Paths {
     /// `INFINITY_DATA_DIR` > settings override > per-platform default.
     pub fn resolve(override_dir: Option<&str>) -> Paths {
-        if let Some(dir) = override_dir.filter(|d| !d.trim().is_empty()) {
-            return Paths {
-                root: PathBuf::from(dir),
-            };
-        }
-        Paths {
-            root: Self::default_root(),
-        }
+        Self::resolve_from(override_dir, Self::default_root())
+    }
+
+    /// Mobile shells supply their sandboxed data directory through Tauri.
+    /// Desktop callers can use `resolve` to keep the existing OS defaults.
+    pub fn resolve_from(override_dir: Option<&str>, default_root: PathBuf) -> Paths {
+        let root = Self::choose_root(
+            override_dir,
+            std::env::var_os("INFINITY_DATA_DIR"),
+            default_root,
+        );
+        Paths { root }
+    }
+
+    fn choose_root(
+        override_dir: Option<&str>,
+        env_dir: Option<std::ffi::OsString>,
+        default_root: PathBuf,
+    ) -> PathBuf {
+        env_dir
+            .filter(|dir| !dir.is_empty())
+            .map(PathBuf::from)
+            .or_else(|| {
+                override_dir
+                    .filter(|dir| !dir.trim().is_empty())
+                    .map(PathBuf::from)
+            })
+            .unwrap_or(default_root)
     }
 
     pub fn default_root() -> PathBuf {
@@ -130,5 +150,37 @@ impl Paths {
         } else {
             text
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uses_the_mobile_sandbox_when_no_override_is_configured() {
+        let sandbox = PathBuf::from("/data/user/0/app.infinitylauncher/files");
+        assert_eq!(Paths::choose_root(None, None, sandbox.clone()), sandbox);
+        assert_eq!(Paths::choose_root(Some("  "), None, sandbox.clone()), sandbox);
+    }
+
+    #[test]
+    fn explicit_storage_override_still_works() {
+        assert_eq!(
+            Paths::choose_root(Some("/custom/library"), None, PathBuf::from("/default")),
+            PathBuf::from("/custom/library")
+        );
+    }
+
+    #[test]
+    fn environment_override_has_highest_priority() {
+        assert_eq!(
+            Paths::choose_root(
+                Some("/custom/library"),
+                Some("/portable/library".into()),
+                PathBuf::from("/default"),
+            ),
+            PathBuf::from("/portable/library")
+        );
     }
 }

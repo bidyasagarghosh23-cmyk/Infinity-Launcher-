@@ -2,6 +2,7 @@
 //! running game processes and a rolling buffer of the game console.
 
 use std::collections::{HashMap, VecDeque};
+use std::path::PathBuf;
 use std::process::Child;
 use std::sync::{Mutex, RwLock};
 
@@ -32,11 +33,13 @@ pub struct RunningGame {
 }
 
 impl AppState {
-    pub fn new(http: reqwest::Client) -> AppState {
-        let paths = Paths::resolve(None);
+    pub fn new(http: reqwest::Client, platform_data_dir: Option<PathBuf>) -> AppState {
+        let paths = platform_data_dir
+            .map(|root| Paths { root })
+            .unwrap_or_else(|| Paths::resolve(None));
         let _ = paths.ensure();
         let settings: Settings = store::read_json(&paths.settings_file(), Settings::default());
-        let effective = Paths::resolve(settings.data_dir.as_deref());
+        let effective = Paths::resolve_from(settings.data_dir.as_deref(), paths.root);
         let _ = effective.ensure();
         let accounts: Vec<Account> = store::read_json(&effective.accounts_file(), Vec::new());
         let instances: Vec<Instance> = store::read_json(&effective.instances_file(), Vec::new());

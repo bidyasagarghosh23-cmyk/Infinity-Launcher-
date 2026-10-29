@@ -271,7 +271,8 @@ impl<'a> Installer<'a> {
             .join("assets")
             .join("log_configs")
             .join(&file.id);
-        mojang::download(self.client, url, &dest, file.sha1.as_deref()).await?;
+        let sha1 = file.file.as_ref().and_then(|download| download.sha1.as_deref());
+        mojang::download(self.client, url, &dest, sha1).await?;
         Ok(())
     }
 }
@@ -332,22 +333,27 @@ pub async fn loader_versions(
             };
             let xml = client.get(url).send().await?.error_for_status()?.text().await?;
             let prefix = forge_prefix(loader, mc_version);
-            let versions = xml
-                .split("<version>")
-                .skip(1)
-                .filter_map(|chunk| chunk.split("</version>").next())
-                .filter(|version| version.starts_with(&prefix))
-                .map(|version| LoaderVersion {
-                    version: version.to_string(),
-                    stable: !version.contains("beta") && !version.contains("-"),
-                    mc_version: Some(mc_version.to_string()),
-                })
-                .rev()
-                .take(60)
-                .collect();
-            Ok(versions)
+            Ok(maven_versions(&xml, &prefix, mc_version))
         }
     }
+}
+
+/// Maven metadata is oldest first; the picker wants the newest 60 builds.
+fn maven_versions(xml: &str, prefix: &str, mc_version: &str) -> Vec<LoaderVersion> {
+    let mut versions: Vec<LoaderVersion> = xml
+        .split("<version>")
+        .skip(1)
+        .filter_map(|chunk| chunk.split("</version>").next())
+        .filter(|version| version.starts_with(prefix))
+        .map(|version| LoaderVersion {
+            version: version.to_string(),
+            stable: !version.contains("beta") && !version.contains("-"),
+            mc_version: Some(mc_version.to_string()),
+        })
+        .collect();
+    versions.reverse();
+    versions.truncate(60);
+    versions
 }
 
 fn forge_prefix(loader: Loader, mc_version: &str) -> String {
@@ -591,6 +597,19 @@ mod tests {
             "1.20.1-forge-47.2.0"
         );
         assert_eq!(loader_version_id(Loader::Vanilla, "", "1.21.4"), "1.21.4");
+    }
+
+    #[test]
+    fn maven_versions_are_newest_first_and_limited() {
+        let entries: String = (1..=65)
+            .map(|patch| format!("<version>21.1.{patch}</version>"))
+            .collect();
+        let xml = format!("<metadata><versioning><versions>{entries}<version>20.4.9</version></versions></versioning></metadata>");
+        let versions = maven_versions(&xml, "21.1.", "1.21.1");
+        assert_eq!(versions.len(), 60);
+        assert_eq!(versions[0].version, "21.1.65");
+        assert_eq!(versions[59].version, "21.1.6");
+        assert!(versions.iter().all(|version| version.stable));
     }
 
     #[test]

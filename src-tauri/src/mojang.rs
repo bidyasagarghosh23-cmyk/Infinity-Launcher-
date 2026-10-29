@@ -192,7 +192,7 @@ pub struct ResolvedVersion {
     pub java_major: Option<u32>,
     pub logging_argument: Option<String>,
     /// `log_configs/<id>` payload referenced by `logging_argument`.
-    pub logging_file: Option<FileDownload>,
+    pub logging_file: Option<LoggingFile>,
     pub logging_url: Option<String>,
     /// The version id that owns the client jar (parents may provide it).
     pub jar_id: String,
@@ -305,7 +305,7 @@ fn merge_version(parent: Option<ResolvedVersion>, child: &VersionJson) -> Resolv
             .logging
             .as_ref()
             .and_then(|m| m.get("client"))
-            .and_then(|l| l.file.clone())
+            .cloned()
             .or(parent_logging_file),
         logging_url: child
             .logging

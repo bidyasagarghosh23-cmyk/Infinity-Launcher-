@@ -31,7 +31,7 @@ pub enum Error {
 }
 
 impl Serialize for Error {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
         serializer.serialize_str(&self.to_string())
     }
 }
@@ -60,5 +60,19 @@ pub trait Context<T> {
 impl<T, E: std::fmt::Display> Context<T> for std::result::Result<T, E> {
     fn context(self, message: impl Into<String>) -> Result<T> {
         self.map_err(|err| Error::Message(format!("{}: {}", message.into(), err)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn errors_cross_ipc_as_plain_strings() {
+        assert_eq!(serde_json::to_string(&Error::NoJava).unwrap(), "\"no Java runtime found\"");
+        assert_eq!(
+            serde_json::to_string(&Error::Auth("expired".into())).unwrap(),
+            "\"authentication failed: expired\""
+        );
     }
 }

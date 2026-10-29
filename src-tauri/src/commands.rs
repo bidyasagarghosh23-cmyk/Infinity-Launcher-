@@ -906,3 +906,110 @@ pub async fn apply_performance(state: State<'_, AppState>, instance_id: String, 
 pub async fn engine_status() -> Result<EngineStatus> {
     Ok(crate::engine::status())
 }
+
+#[tauri::command]
+pub async fn duplicate_instance(state: State<'_, AppState>, instance_id: String, name: Option<String>) -> Result<Instance> {
+    let instance = state.instances_snapshot().into_iter().find(|i| i.id == instance_id)
+        .ok_or_else(|| Error::Message("instance not found".into()))?;
+    let paths = state.paths();
+    let id = uuid::Uuid::new_v4().to_string();
+    let src = PathBuf::from(&instance.game_dir);
+    let dest = paths.instance_dir(&id);
+    if src.exists() { copy_dir_all(&src, &dest)?; } else { std::fs::create_dir_all(&dest)?; }
+    let mut copy = instance.clone();
+    copy.id = id.clone();
+    copy.name = name.unwrap_or_else(|| format!("{} (copy)", instance.name));
+    copy.game_dir = dest.to_string_lossy().to_string();
+    copy.created_at = chrono::Utc::now().timestamp();
+    copy.last_played = None;
+    copy.playtime_secs = 0;
+    state.instances.write().map_err(|_| Error::Message("instances lock poisoned".into()))?.push(copy.clone());
+    state.save_instances()?;
+    Ok(copy)
+}
+
+fn copy_dir_all(src: &PathBuf, dest: &PathBuf) -> Result<()> {
+    std::fs::create_dir_all(dest)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let to = dest.join(entry.file_name());
+        if ty.is_dir() { copy_dir_all(&entry.path(), &to)?; }
+        else if ty.is_file() { std::fs::copy(entry.path(), to)?; }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_favorite_instance(state: State<'_, AppState>, instance_id: String, favorite: bool) -> Result<Settings> {
+    let mut settings = state.settings_snapshot();
+    settings.favorite_instances.retain(|id| id != &instance_id);
+    if favorite { settings.favorite_instances.insert(0, instance_id); }
+    *state.settings.write().map_err(|_| Error::Message("settings lock poisoned".into()))? = settings.clone();
+    state.save_settings()?;
+    Ok(settings)
+}
+
+#[tauri::command]
+pub async fn check_content_updates(state: State<'_, AppState>, instance_id: String, kind: ContentKind) -> Result<Vec<ContentUpdate>> {
+    crate::content::check_updates(&state, &instance_id, kind).await
+}
+
+#[tauri::command]
+pub async fn list_screenshots(state: State<'_, AppState>, instance_id: String) -> Result<Vec<ScreenshotItem>> {
+    crate::content::screenshots(&state, &instance_id)
+}
+
+#[tauri::command]
+pub async fn backup_world(state: State<'_, AppState>, instance_id: String, world_id: String) -> Result<BackupItem> {
+    crate::content::backup_world(&state, &instance_id, &world_id)
+}
+
+#[tauri::command]
+pub async fn list_backups(state: State<'_, AppState>, instance_id: String) -> Result<Vec<BackupItem>> {
+    crate::content::list_backups(&state, &instance_id)
+}
+
+#[tauri::command]
+pub async fn restore_backup(state: State<'_, AppState>, instance_id: String, backup_id: String, target_name: Option<String>) -> Result<WorldItem> {
+    crate::content::restore_backup(&state, &instance_id, &backup_id, target_name)
+}
+
+#[tauri::command]
+pub async fn export_instance(state: State<'_, AppState>, instance_id: String) -> Result<String> {
+    let instance = state.instances_snapshot().into_iter().find(|i| i.id == instance_id)
+        .ok_or_else(|| Error::Message("instance not found".into()))?;
+    let paths = state.paths();
+    let dir = PathBuf::from(&instance.game_dir);
+    if !dir.exists() { return Err(Error::Message("instance folder not found".into())); }
+    let exports = paths.root.join("exports");
+    std::fs::create_dir_all(&exports)?;
+    let safe_name: String = instance.name.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' }).collect();
+    let path = exports.join(format!("{safe_name}-{}.zip", chrono::Utc::now().format("%Y%m%d-%H%M%S")));
+    crate::content::zip_directory(&dir, &path)?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub async fn open_path(app: AppHandle, path: String) -> Result<()> {
+    use tauri_plugin_opener::OpenerExt;
+    app.opener().open_path(path, None::<&str>).map_err(|err| Error::Message(err.to_string()))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_android_engine(app: AppHandle, package: Option<String>) -> Result<()> {
+    use tauri_plugin_opener::OpenerExt;
+    let package = package.unwrap_or_else(|| "org.angelauramc.amethyst".to_string());
+    if !package.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_') {
+        return Err(Error::Message("invalid Android package name".into()));
+    }
+    let uri = format!("intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package={package};end");
+    app.opener().open_url(uri, None::<&str>).map_err(|err| Error::Message(format!("Could not open Android engine. Install Amethyst first: {err}")))?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn import_modpack(state: State<'_, AppState>, args: ImportModpackArgs) -> Result<Instance> {
+    crate::modpack::import(&state, &args).await
+}

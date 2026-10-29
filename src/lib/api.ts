@@ -3,6 +3,10 @@
 import { call } from './bridge';
 import type {
   Account,
+  BackupItem,
+  ContentUpdate,
+  ImportModpackArgs,
+  ScreenshotItem,
   AppearanceProfile,
   CatalogFile,
   CatalogPage,
@@ -86,4 +90,15 @@ export const api = {
   performancePresets: () => call<PerformancePreset[]>('performance_presets'),
   applyPerformance: (instanceId: string, presetId: string) => call<void>('apply_performance', { instanceId, presetId }),
   engineStatus: () => call<EngineStatus>('engine_status'),
+  duplicateInstance: (instanceId: string, name?: string | null) => call<Instance>('duplicate_instance', { instanceId, name }),
+  setFavoriteInstance: (instanceId: string, favorite: boolean) => call<Settings>('set_favorite_instance', { instanceId, favorite }),
+  checkContentUpdates: (instanceId: string, kind: ContentKind) => call<ContentUpdate[]>('check_content_updates', { instanceId, kind }),
+  listScreenshots: (instanceId: string) => call<ScreenshotItem[]>('list_screenshots', { instanceId }),
+  backupWorld: (instanceId: string, worldId: string) => call<BackupItem>('backup_world', { instanceId, worldId }),
+  listBackups: (instanceId: string) => call<BackupItem[]>('list_backups', { instanceId }),
+  restoreBackup: (instanceId: string, backupId: string, targetName?: string | null) => call<WorldItem>('restore_backup', { instanceId, backupId, targetName }),
+  exportInstance: (instanceId: string) => call<string>('export_instance', { instanceId }),
+  openPath: (path: string) => call<void>('open_path', { path }),
+  openAndroidEngine: (packageId?: string | null) => call<void>('open_android_engine', { package: packageId }),
+  importModpack: (args: ImportModpackArgs) => call<Instance>('import_modpack', { args }),
 };

@@ -12,6 +12,7 @@ pub mod java;
 pub mod launch;
 pub mod model;
 pub mod mojang;
+pub mod modpack;
 pub mod paths;
 pub mod performance;
 pub mod rules;
@@ -80,7 +81,18 @@ pub fn run() {
             commands::remove_appearance,
             commands::performance_presets,
             commands::apply_performance,
-            commands::engine_status
+            commands::engine_status,
+            commands::duplicate_instance,
+            commands::set_favorite_instance,
+            commands::check_content_updates,
+            commands::list_screenshots,
+            commands::backup_world,
+            commands::list_backups,
+            commands::restore_backup,
+            commands::export_instance,
+            commands::open_path,
+            commands::open_android_engine,
+            commands::import_modpack
         ])
         .setup(|app| {
             // Android and iOS must write inside their own app sandbox, not a

@@ -48,11 +48,11 @@ export function Wordmark({
   return (
     <div className={cn('flex flex-col leading-none', className)}>
       <span className="text-[17px] font-semibold tracking-tight text-white">
-        Infinity<span className="text-brand"> Launcher</span>
+        Infinity<span className="text-brand"> Client</span>
       </span>
       {!compact ? (
         <span className="mt-1 font-pixel text-[8px] uppercase tracking-[0.22em] text-white/30">
-          java edition · cross-platform
+          java edition · 2.0
         </span>
       ) : null}
     </div>

@@ -28,6 +28,8 @@ export function Content() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [updates, setUpdates] = useState<import('../lib/types').ContentUpdate[]>([]);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => { if (selected) setInstanceId(selected.id); }, [selected?.id]);
 
@@ -50,6 +52,13 @@ export function Content() {
     finally { setBusy(null); }
   }
 
+  async function checkUpdates() {
+    setChecking(true);
+    try { const list = await api.checkContentUpdates(instanceId, kind); setUpdates(list); toast({ title: list.length ? `${list.length} update${list.length > 1 ? 's' : ''} available` : 'Everything is up to date', tone: list.length ? 'info' : 'success' }); }
+    catch (err) { toast({ title: 'Update check failed', description: String(err), tone: 'error' }); }
+    finally { setChecking(false); }
+  }
+
   async function remove(item: ContentItem) {
     setBusy(item.id);
     try {
@@ -64,7 +73,7 @@ export function Content() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
-      <SectionHeading title="Content manager" subtitle="Per-instance mods, packs, shaders, worlds and data packs. Changes apply the next time the instance starts." action={<Button size="sm" variant="primary" onClick={() => setRoute('discover')} icon={<Puzzle className="h-3.5 w-3.5" />}>Browse content</Button>} />
+      <SectionHeading title="Content manager" subtitle="Per-instance mods, packs, shaders, worlds and data packs. Changes apply the next time the instance starts." action={<div className="flex gap-2"><Button size="sm" variant="ghost" loading={checking} onClick={checkUpdates} icon={<RefreshCw className="h-3.5 w-3.5" />}>Check updates</Button><Button size="sm" variant="primary" onClick={() => setRoute('discover')} icon={<Puzzle className="h-3.5 w-3.5" />}>Browse content</Button></div>} />
       <Card className="p-4">
         <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
           <Select value={instanceId} onChange={(e) => setInstanceId(e.target.value)} aria-label="Instance">
@@ -78,6 +87,7 @@ export function Content() {
           ))}
         </div>
         <p className="mt-3 text-[12px] leading-relaxed text-white/40">{active.hint}</p>
+        {updates.length > 0 ? <div className="mt-3 rounded-2xl border border-cyan-400/20 bg-cyan-400/[0.06] p-3 text-[12px] text-cyan-100/80">{updates.length} installed item{updates.length > 1 ? 's have' : ' has'} a newer compatible file on the catalog. Reinstall from Discover to update.</div> : null}
       </Card>
 
       {loading ? <div className="flex justify-center py-10"><Spinner className="h-6 w-6" /></div> : items.length === 0 ? (

@@ -268,3 +268,111 @@ mod tests {
         assert_eq!(enabled_name("sodium.jar"), None);
     }
 }
+
+pub async fn check_updates(state: &AppState, instance_id: &str, kind: ContentKind) -> Result<Vec<ContentUpdate>> {
+    let items = list(state, instance_id, kind)?;
+    let instance = state.instances_snapshot().into_iter().find(|i| i.id == instance_id)
+        .ok_or_else(|| Error::Message("instance not found".into()))?;
+    let mut updates = Vec::new();
+    for item in items {
+        let (Some(source), Some(project_id)) = (item.source, item.project_id.clone()) else { continue };
+        let Ok(files) = crate::catalog::files(&state.http, source, &project_id, kind, Some(&instance.mc_version), Some(&instance.loader)).await else { continue };
+        if let Some(latest) = files.into_iter().next() {
+            if item.version_id.as_deref() != Some(latest.id.as_str()) {
+                updates.push(ContentUpdate { item, latest });
+            }
+        }
+    }
+    Ok(updates)
+}
+
+pub fn screenshots(state: &AppState, instance_id: &str) -> Result<Vec<ScreenshotItem>> {
+    let dir = instance_dir(state, instance_id)?.join("screenshots");
+    let mut out = Vec::new();
+    if !dir.exists() { return Ok(out); }
+    for entry in std::fs::read_dir(&dir)? {
+        let entry = entry?;
+        let meta = entry.metadata()?;
+        if !meta.is_file() { continue; }
+        let name = entry.file_name().to_string_lossy().to_string();
+        let lower = name.to_lowercase();
+        if !(lower.ends_with(".png") || lower.ends_with(".jpg") || lower.ends_with(".jpeg")) { continue; }
+        out.push(ScreenshotItem {
+            id: name.clone(), instance_id: instance_id.to_string(), file_name: name,
+            path: entry.path().to_string_lossy().to_string(), size_bytes: meta.len(),
+            modified_at: meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs() as i64).unwrap_or_default(),
+        });
+    }
+    out.sort_by(|a,b| b.modified_at.cmp(&a.modified_at));
+    Ok(out)
+}
+
+pub fn backup_world(state: &AppState, instance_id: &str, world_id: &str) -> Result<BackupItem> {
+    let world_id = safe_file_name(world_id)?;
+    let root = instance_dir(state, instance_id)?;
+    let world = root.join("saves").join(&world_id);
+    if !world.is_dir() { return Err(Error::Message("world not found".into())); }
+    let backups = root.join("backups");
+    std::fs::create_dir_all(&backups)?;
+    let stamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
+    let file_name = format!("{world_id}-{stamp}.zip");
+    let path = backups.join(&file_name);
+    zip_directory(&world, &path)?;
+    let meta = std::fs::metadata(&path)?;
+    Ok(BackupItem { id: file_name.clone(), instance_id: instance_id.to_string(), world_id, file_name, path: path.to_string_lossy().to_string(), size_bytes: meta.len(), created_at: chrono::Utc::now().timestamp() })
+}
+
+pub fn list_backups(state: &AppState, instance_id: &str) -> Result<Vec<BackupItem>> {
+    let dir = instance_dir(state, instance_id)?.join("backups");
+    let mut out = Vec::new();
+    if !dir.exists() { return Ok(out); }
+    for entry in std::fs::read_dir(&dir)? {
+        let entry = entry?;
+        let meta = entry.metadata()?;
+        if !meta.is_file() { continue; }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !name.ends_with(".zip") { continue; }
+        let world_id = name.rsplit_once('-').map(|(a,_)| a.to_string()).unwrap_or_else(|| name.trim_end_matches(".zip").to_string());
+        out.push(BackupItem { id: name.clone(), instance_id: instance_id.to_string(), world_id, file_name: name, path: entry.path().to_string_lossy().to_string(), size_bytes: meta.len(), created_at: meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs() as i64).unwrap_or_default() });
+    }
+    out.sort_by(|a,b| b.created_at.cmp(&a.created_at));
+    Ok(out)
+}
+
+pub fn restore_backup(state: &AppState, instance_id: &str, backup_id: &str, target_name: Option<String>) -> Result<WorldItem> {
+    let backup_id = safe_file_name(backup_id)?;
+    let root = instance_dir(state, instance_id)?;
+    let path = root.join("backups").join(&backup_id);
+    if !path.is_file() { return Err(Error::Message("backup not found".into())); }
+    let target = target_name.unwrap_or_else(|| backup_id.trim_end_matches(".zip").to_string());
+    let target = safe_file_name(&target)?;
+    let dest = root.join("saves").join(&target);
+    if dest.exists() { return Err(Error::Message("target world already exists; choose a new name".into())); }
+    extract_zip(&path, &dest)?;
+    worlds(state, instance_id)?.into_iter().find(|w| w.folder_name == target).ok_or_else(|| Error::Message("restored world missing level.dat".into()))
+}
+
+pub fn zip_directory(src: &Path, dest: &Path) -> Result<()> {
+    let file = std::fs::File::create(dest)?;
+    let mut zip = zip::ZipWriter::new(file);
+    let options: zip::write::SimpleFileOptions = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+    fn walk(base: &Path, dir: &Path, zip: &mut zip::ZipWriter<std::fs::File>, options: zip::write::SimpleFileOptions) -> Result<()> {
+        for entry in std::fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            let rel = path.strip_prefix(base).map_err(|e| Error::Message(e.to_string()))?.to_string_lossy().replace('\\', "/");
+            if path.is_dir() {
+                zip.add_directory(format!("{rel}/"), options).map_err(|e| Error::Message(e.to_string()))?;
+                walk(base, &path, zip, options)?;
+            } else {
+                zip.start_file(rel, options).map_err(|e| Error::Message(e.to_string()))?;
+                let mut f = std::fs::File::open(&path)?;
+                std::io::copy(&mut f, zip)?;
+            }
+        }
+        Ok(())
+    }
+    walk(src, src, &mut zip, options)?;
+    zip.finish().map_err(|e| Error::Message(e.to_string()))?;
+    Ok(())
+}

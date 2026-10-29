@@ -1,4 +1,4 @@
-import { Minus, Search, Square, X } from 'lucide-react';
+import { Command, Minus, Search, Square, X } from 'lucide-react';
 import { useLauncher } from '../../store/launcher';
 import { isNative } from '../../lib/bridge';
 import { platformGlyph } from '../brand/PlatformIcons';
@@ -13,6 +13,7 @@ const TITLES: Record<Route, { title: string; subtitle: string }> = {
   instances: { title: 'Instances', subtitle: 'Every modpack, version and profile in one place' },
   discover: { title: 'Discover', subtitle: 'Browse Modrinth and CurseForge content' },
   content: { title: 'Content', subtitle: 'Enable, disable and remove per-instance content' },
+  tools: { title: 'Tools', subtitle: 'Screenshots, backups, import and export' },
   appearance: { title: 'Appearance', subtitle: 'Local skins, capes and cosmetic profiles' },
   engine: { title: 'Engine', subtitle: 'Amethyst integration status and performance presets' },
   console: { title: 'Console', subtitle: 'Live game output and installer progress' },
@@ -50,13 +51,14 @@ export function TopBar() {
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <button onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))} className="hidden items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-[11px] text-white/50 transition hover:text-white sm:flex" aria-label="Command palette"><Command className="h-3.5 w-3.5" /> K</button>
         <div className="relative hidden sm:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-white/30" />
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             onFocus={() => route !== 'instances' && useLauncher.setState({ route: 'instances' })}
-            placeholder="Search instances…"
+            placeholder="Search or Ctrl+K…"
             className="h-9 w-44 rounded-xl border border-white/10 bg-black/25 pl-9 pr-3 text-[12.5px] text-white placeholder:text-white/25 transition focus:w-60 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/20 xl:w-56"
           />
         </div>

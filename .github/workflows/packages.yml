@@ -66,10 +66,10 @@ jobs:
             binary=src-tauri/target/release/infinity-launcher.exe
           fi
           test -f "$binary" || { find src-tauri/target -name '*.exe'; exit 1; }
-          cp "$binary" packages/Infinity-Launcher-1.0.0-windows-x64.exe
+          cp "$binary" packages/infinity-client-2.0-windows-x64.exe
           setup=$(find src-tauri/target -path '*/bundle/nsis/*-setup.exe' -type f -print -quit)
           test -n "$setup" || { echo 'NSIS installer was not produced'; exit 1; }
-          cp "$setup" packages/Infinity-Launcher-1.0.0-windows-x64-setup.exe
+          cp "$setup" packages/infinity-client-2.0-windows-x64-setup.exe
       - name: Report a build failure in the job annotations
         if: failure()
         shell: bash
@@ -148,7 +148,7 @@ jobs:
           test -x "$apksigner" && test -x "$aapt"
           "$apksigner" verify --verbose "$apk"
           "$aapt" dump badging "$apk" | grep -E 'package:|sdkVersion:|targetSdkVersion:|native-code:'
-          cp "$apk" packages/Infinity-Launcher-1.0.0-android-preview.apk
+          cp "$apk" packages/infinity-client-2.0.apk
       - name: Report a build failure in the job annotations
         if: failure()
         run: |
@@ -186,21 +186,21 @@ jobs:
         shell: bash
         run: |
           cat > packages/INSTALL.md <<'EOF'
-          # Infinity Launcher 1.0.0 — preview packages
+          # Infinity Client 2.0 — Android & Windows packages
 
           ## Windows 10/11, 64-bit Intel/AMD
 
-          - **Infinity-Launcher-1.0.0-windows-x64-setup.exe**: recommended installer.
-          - **Infinity-Launcher-1.0.0-windows-x64.exe**: standalone launcher executable.
+          - **infinity-client-2.0-windows-x64-setup.exe**: recommended installer.
+          - **infinity-client-2.0-windows-x64.exe**: standalone launcher executable.
           - These are release builds, but are not code-signed. Windows SmartScreen may warn about an unknown publisher. Verify the source and SHA-256 checksum before running.
           - Microsoft Edge WebView2 Runtime is required. The installer can download its bootstrapper; the standalone executable needs WebView2 already installed.
           - Minecraft: Java Edition needs a compatible Java runtime. Settings can install Java 21 on desktop.
 
           ## Android 8+, ARM64 phones and x86_64 emulator
 
-          - **Infinity-Launcher-1.0.0-android-preview.apk**: universal sideload APK, debug-signed for testing, not a Play Store release.
+          - **infinity-client-2.0.apk**: universal sideload APK, debug-signed for testing, not a Play Store release.
           - Open the APK on the device and allow installation from that source when Android asks. Do not disable Play Protect globally.
-          - This preview manages instances and downloads. **It cannot play Minecraft: Java Edition:** no Android JVM/rendering bridge is bundled. Use Windows to play.
+          - This build manages instances, content, appearance, screenshots, backups and modpack imports. **In-app Minecraft: Java Edition gameplay is not yet enabled on Android.** Use the Engine page to hand off to an installed Amethyst engine, or use Windows to play. Full embedded Amethyst gameplay is still being integrated and device-tested.
           - The CI debug signing key is not a persistent release identity. A future preview may require uninstalling this one before installing; back up instance data first.
           - No stable release-signing key is included in the repository or this download.
 
@@ -217,20 +217,20 @@ jobs:
       - name: Publish a GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: v1.0.0-preview.${{ github.run_id }}
+          TAG: v2.0.0
         shell: bash
         run: |
           set -euo pipefail
-          title="Infinity Launcher 1.0.0 — Android & Windows preview"
+          title="Infinity Client 2.0"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release edit "$TAG" --title "$title" --notes-file packages/INSTALL.md --prerelease 2>&1 | tee release.log
           else
             gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --title "$title" --notes-file packages/INSTALL.md 2>&1 | tee release.log
           fi
           gh release upload "$TAG" \
-            packages/Infinity-Launcher-1.0.0-android-preview.apk \
-            packages/Infinity-Launcher-1.0.0-windows-x64.exe \
-            packages/Infinity-Launcher-1.0.0-windows-x64-setup.exe \
+            packages/infinity-client-2.0.apk \
+            packages/infinity-client-2.0-windows-x64.exe \
+            packages/infinity-client-2.0-windows-x64-setup.exe \
             packages/SHA256SUMS.txt \
             packages/INSTALL.md \
             --clobber 2>&1 | tee -a release.log

@@ -13,7 +13,7 @@ import type {
   VersionManifest,
 } from '../lib/types';
 
-export type Route = 'home' | 'instances' | 'discover' | 'content' | 'appearance' | 'engine' | 'console' | 'accounts' | 'settings';
+export type Route = 'home' | 'instances' | 'discover' | 'content' | 'appearance' | 'engine' | 'console' | 'accounts' | 'settings' | 'tools';
 
 export interface Toast {
   id: number;

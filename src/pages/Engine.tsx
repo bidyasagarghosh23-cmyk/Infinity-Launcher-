@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Cpu, ExternalLink, Gauge, ShieldCheck } from 'lucide-react';
+import { Cpu, ExternalLink, Gauge, Play, ShieldCheck, Smartphone } from 'lucide-react';
 import { useLauncher, selectSelectedInstance } from '../store/launcher';
 import { Badge, Card, SectionHeading } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -18,7 +18,10 @@ const ROADMAP = [
   ['Amethyst launch bridge + touch controls', 'next'],
   ['Physical-device gameplay verification', 'required before enabling Play'],
   ['In-game cosmetics bridge', 'future'],
-  ['Full modpack resolution + imports', 'future'],
+  ['Modpack import (.mrpack / CurseForge)', 'implemented'],
+  ['Screenshots, backups, favorites, export', 'implemented'],
+  ['Android engine handoff (external Amethyst)', 'implemented'],
+  ['Full modpack dependency resolution', 'future'],
 ] as const;
 
 export function Engine() {
@@ -29,6 +32,8 @@ export function Engine() {
   const [status, setStatus] = useState<EngineStatus | null>(null);
   const [presets, setPresets] = useState<PerformancePreset[]>([]);
   const [applying, setApplying] = useState<string | null>(null);
+  const [handoff, setHandoff] = useState(false);
+  const system = useLauncher((s) => s.system);
 
   useEffect(() => {
     void api.engineStatus().then(setStatus).catch(() => setStatus(null));
@@ -76,6 +81,17 @@ export function Engine() {
           ))}
         </div>
       </Card>
+
+      {system?.os === 'android' ? (
+        <Card className="flex flex-col gap-3 border-violet-400/25 bg-violet-500/[0.06] p-5 sm:flex-row sm:items-center">
+          <Smartphone className="h-6 w-6 flex-none text-violet-300" />
+          <div className="flex-1">
+            <div className="text-[14px] font-semibold text-white">Android engine handoff</div>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-white/55">Infinity manages your library here. To play Java Edition on this device, open the installed Amethyst engine and select/import the instance there. Embedded in-app gameplay is not enabled until device verification passes.</p>
+          </div>
+          <Button variant="primary" icon={<Play className="h-4 w-4" />} loading={handoff} onClick={async () => { setHandoff(true); try { await api.openAndroidEngine(); toast({ title: 'Opening Amethyst', tone: 'info' }); } catch (err) { toast({ title: 'Install Amethyst first', description: String(err), tone: 'error' }); } finally { setHandoff(false); } }}>Open Amethyst</Button>
+        </Card>
+      ) : null}
 
       <section>
         <SectionHeading title="Performance presets" subtitle={selected ? `Apply to ${selected.name} by updating its options.txt. These are conservative vanilla settings, not engine-level patches.` : 'Create an instance first.'} />

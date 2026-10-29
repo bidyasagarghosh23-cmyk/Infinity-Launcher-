@@ -9,6 +9,9 @@ import { Discover } from './pages/Discover';
 import { Content } from './pages/Content';
 import { Appearance } from './pages/Appearance';
 import { Engine } from './pages/Engine';
+import { Tools } from './pages/Tools';
+import { CommandPalette } from './components/features/CommandPalette';
+import { useState } from 'react';
 import { useLauncher } from './store/launcher';
 import { isNative } from './lib/bridge';
 
@@ -17,6 +20,7 @@ export default function App() {
   const route = useLauncher((state) => state.route);
   const init = useLauncher((state) => state.init);
   const theme = useLauncher((state) => state.settings?.theme ?? 'lunar');
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
     void init();
@@ -24,6 +28,14 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.classList.toggle('is-native', isNative);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setPaletteOpen((v) => !v); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   useEffect(() => {
@@ -40,11 +52,13 @@ export default function App() {
           {route === 'content' ? <Content /> : null}
           {route === 'appearance' ? <Appearance /> : null}
           {route === 'engine' ? <Engine /> : null}
+          {route === 'tools' ? <Tools /> : null}
           {route === 'console' ? <Console /> : null}
           {route === 'accounts' ? <Accounts /> : null}
           {route === 'settings' ? <Settings /> : null}
         </div>
       ) : null}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </AppShell>
   );
 }

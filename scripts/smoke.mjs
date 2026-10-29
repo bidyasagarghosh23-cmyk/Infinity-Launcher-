@@ -140,16 +140,19 @@ console.log('store:', JSON.stringify({
 }));
 fs.writeFileSync(path.join(outDir, 'smoke-home.html'), document.body.innerHTML);
 must('Fabulously Optimized', 'seed instance');
-must('Infinity Launcher', 'brand');
-must('Run it anywhere', 'platforms strip');
+must('Infinity', 'brand');
+must('Client', 'brand');
+must('Selected instance', 'hero');
+must('PLAY', 'play button');
 console.log('route /home ok');
 
-for (const label of ['Instances', 'Discover', 'Content', 'Appearance', 'Engine', 'Console', 'Accounts', 'Settings']) {
+for (const label of ['Instances', 'Discover', 'Content', 'Tools', 'Appearance', 'Engine', 'Console', 'Accounts', 'Settings']) {
   await clickByText(label);
   fs.writeFileSync(path.join(outDir, `smoke-${label}.html`), document.body.innerHTML);
   console.log(`route /${label.toLowerCase()} ok — ${text().length} chars`);
   if (label === 'Discover') must('Discover content', 'catalog browser');
   if (label === 'Content') must('Content manager', 'content toggles');
+  if (label === 'Tools') must('Screenshot gallery', 'tools');
   if (label === 'Appearance') must('Appearance studio', 'local cosmetics');
   if (label === 'Engine') { must('Engine & performance', 'engine status'); must('Not bundled yet', 'honest engine status'); }
   if (label === 'Settings') must('Java 21', 'java runtime list');
@@ -212,11 +215,12 @@ await act(async () => {
 });
 must('Android engine integration is staged', 'mobile limitation banner');
 const mobilePlay = [...document.querySelectorAll('button')].filter(
-  (button) => button.textContent?.trim() === 'Play',
+  (button) => button.textContent?.trim() === 'Play' || button.textContent?.trim() === 'PLAY',
 );
-if (!mobilePlay.length || mobilePlay.some((button) => !button.disabled)) {
+if (mobilePlay.some((button) => !button.disabled)) {
   throw new Error('Android must not offer an enabled Play button');
 }
+must('Open Android engine', 'android handoff');
 await act(async () => {
   await globalThis.window.__store.getState().play(installedInstance.id);
 });

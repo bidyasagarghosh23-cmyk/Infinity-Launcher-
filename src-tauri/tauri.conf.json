@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Infinity Launcher",
+  "productName": "Infinity Client",
   "mainBinaryName": "infinity-launcher",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "identifier": "app.infinitylauncher",
   "build": {
     "beforeDevCommand": "npm run dev",

@@ -122,11 +122,18 @@ pub struct Settings {
     pub touch_controls: bool,
     #[serde(default)]
     pub reduce_effects: bool,
+    #[serde(default)]
+    pub favorite_instances: Vec<String>,
+    #[serde(default = "default_show_news")]
+    pub show_news: bool,
+    #[serde(default)]
+    pub compact_mode: bool,
 }
 
 fn default_performance_profile() -> String { "balanced".into() }
 fn default_android_renderer() -> String { "gl4es".into() }
 fn default_touch_controls() -> bool { true }
+fn default_show_news() -> bool { true }
 
 impl Default for Settings {
     fn default() -> Self {
@@ -151,6 +158,9 @@ impl Default for Settings {
             android_renderer: "gl4es".to_string(),
             touch_controls: true,
             reduce_effects: false,
+            favorite_instances: Vec::new(),
+            show_news: true,
+            compact_mode: false,
         }
     }
 }
@@ -451,4 +461,41 @@ pub struct PerformancePreset {
     pub particles: u32,
     pub clouds: u32,
     pub graphics_mode: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentUpdate {
+    pub item: ContentItem,
+    pub latest: CatalogFile,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScreenshotItem {
+    pub id: String,
+    pub instance_id: String,
+    pub file_name: String,
+    pub path: String,
+    pub size_bytes: u64,
+    pub modified_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupItem {
+    pub id: String,
+    pub instance_id: String,
+    pub world_id: String,
+    pub file_name: String,
+    pub path: String,
+    pub size_bytes: u64,
+    pub created_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportModpackArgs {
+    pub path: String,
+    pub name: Option<String>,
 }

@@ -59,6 +59,9 @@ export interface Settings {
   androidRenderer: string;
   touchControls: boolean;
   reduceEffects: boolean;
+  favoriteInstances: string[];
+  showNews: boolean;
+  compactMode: boolean;
 }
 
 export interface Account {
@@ -279,3 +282,8 @@ export interface PerformancePreset {
   clouds: number;
   graphicsMode: number;
 }
+
+export interface ContentUpdate { item: ContentItem; latest: CatalogFile }
+export interface ScreenshotItem { id: string; instanceId: string; fileName: string; path: string; sizeBytes: number; modifiedAt: number }
+export interface BackupItem { id: string; instanceId: string; worldId: string; fileName: string; path: string; sizeBytes: number; createdAt: number }
+export interface ImportModpackArgs { path: string; name?: string | null }

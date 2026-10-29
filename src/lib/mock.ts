@@ -138,6 +138,9 @@ const defaultSettings: Settings = {
   androidRenderer: 'gl4es',
   touchControls: true,
   reduceEffects: false,
+  favoriteInstances: [],
+  showNews: true,
+  compactMode: false,
 };
 
 function seedInstances(): Instance[] {
@@ -783,6 +786,27 @@ export async function mockCall<T>(command: string, args?: Record<string, unknown
 
     case 'apply_performance':
       return undefined as T;
+
+    case 'duplicate_instance': {
+      const src = db.instances.find((i) => i.id === args?.instanceId);
+      if (!src) throw new Error('instance not found');
+      const copy = { ...src, id: `copy-${Date.now()}`, name: (args?.name as string) || `${src.name} (copy)`, createdAt: Math.floor(Date.now()/1000), lastPlayed: null, playtimeSecs: 0 };
+      db.instances.push(copy); persist(); return copy as T;
+    }
+    case 'set_favorite_instance': {
+      const id = args?.instanceId as string; const favorite = Boolean(args?.favorite);
+      db.settings.favoriteInstances = [...(db.settings.favoriteInstances ?? []).filter((x) => x !== id), ...(favorite ? [id] : [])];
+      persist(); return db.settings as T;
+    }
+    case 'check_content_updates': return [] as T;
+    case 'list_screenshots': return [] as T;
+    case 'backup_world': return { id: `backup-${Date.now()}`, instanceId: args?.instanceId, worldId: args?.worldId, fileName: `${args?.worldId}.zip`, path: '', sizeBytes: 0, createdAt: Math.floor(Date.now()/1000) } as T;
+    case 'list_backups': return [] as T;
+    case 'restore_backup': throw new Error('Backups are available in the native app.');
+    case 'export_instance': return '' as T;
+    case 'open_path': return undefined as T;
+    case 'open_android_engine': throw new Error('Android engine handoff is available in the Android app.');
+    case 'import_modpack': throw new Error('Modpack import is available in the native app.');
 
     case 'engine_status':
       return {

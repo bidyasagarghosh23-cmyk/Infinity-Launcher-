@@ -7,6 +7,9 @@ import {
   Square,
   Trash2,
   Zap,
+  Star,
+  Copy,
+  Archive,
 } from 'lucide-react';
 import type { Instance, Progress } from '../../lib/types';
 import { BlockIcon } from '../brand/BlockIcon';
@@ -28,6 +31,11 @@ export function InstanceCard({ instance, progress }: { instance: Instance; progr
   const running = useLauncher((state) => state.running[instance.id]?.running ?? false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const favorites = useLauncher((s) => s.settings?.favoriteInstances ?? []);
+  const patchSettings = useLauncher((s) => s.patchSettings);
+  const refreshInstances = useLauncher((s) => s.refreshInstances);
+  const toast = useLauncher((s) => s.toast);
+  const isFavorite = favorites.includes(instance.id);
 
   const installing = Boolean(progress && progress.stage !== 'done' && progress.stage !== 'error');
   const percent =
@@ -159,6 +167,21 @@ export function InstanceCard({ instance, progress }: { instance: Instance; progr
                     void install(instance.id, true);
                     setMenuOpen(false);
                   }}
+                />
+                <MenuItem
+                  icon={<Star className="h-3.5 w-3.5" />}
+                  label={isFavorite ? 'Remove favorite' : 'Add favorite'}
+                  onClick={() => { void api.setFavoriteInstance(instance.id, !isFavorite).then(patchSettings).catch((err) => toast({ title: 'Favorite failed', description: String(err), tone: 'error' })); setMenuOpen(false); }}
+                />
+                <MenuItem
+                  icon={<Copy className="h-3.5 w-3.5" />}
+                  label="Duplicate"
+                  onClick={() => { void api.duplicateInstance(instance.id).then(async (copy) => { await refreshInstances(); toast({ title: 'Duplicated', description: copy.name, tone: 'success' }); }).catch((err) => toast({ title: 'Duplicate failed', description: String(err), tone: 'error' })); setMenuOpen(false); }}
+                />
+                <MenuItem
+                  icon={<Archive className="h-3.5 w-3.5" />}
+                  label="Export .zip"
+                  onClick={() => { void api.exportInstance(instance.id).then((path) => toast({ title: 'Exported', description: path, tone: 'success' })).catch((err) => toast({ title: 'Export failed', description: String(err), tone: 'error' })); setMenuOpen(false); }}
                 />
                 <MenuItem
                   icon={<FolderOpen className="h-3.5 w-3.5" />}

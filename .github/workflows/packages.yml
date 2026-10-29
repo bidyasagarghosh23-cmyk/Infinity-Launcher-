@@ -123,6 +123,7 @@ jobs:
           for path in Path('src-tauri/gen/android').rglob('app/build.gradle.kts'):
               text = path.read_text()
               updated = re.sub(r'^\s*jniLibs\.keepDebugSymbols\.add\([^\n]*\)\s*$', '', text, flags=re.MULTILINE)
+              updated = updated.replace('isJniDebuggable = true', 'isJniDebuggable = false')
               if updated != text:
                   path.write_text(updated)
                   changed += 1
@@ -131,6 +132,8 @@ jobs:
           print(f'Removed debug-symbol keep rules from {changed} Gradle file(s)')
           PY
       - name: Build ARM64 and x86_64 APK
+        env:
+          CARGO_PROFILE_DEV_DEBUG: 0
         run: |
           set -euo pipefail
           npm run tauri android build -- --ci --apk --debug --target aarch64 x86_64 2>&1 | tee android-build.log

@@ -121,8 +121,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p packages
-          apk=$(find src-tauri/gen/android/app/build/outputs/apk -name '*universal*debug*.apk' -type f -print -quit)
-          test -n "$apk" || { find src-tauri/gen/android/app/build/outputs -type f; exit 1; }
+          apk=$(find src-tauri/gen/android -path '*/outputs/apk/*' -name '*universal*debug*.apk' -type f -print -quit)
+          test -n "$apk" || { find src-tauri/gen/android -type f -name '*.apk'; exit 1; }
           apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
           aapt=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -1)
           test -x "$apksigner" && test -x "$aapt"
